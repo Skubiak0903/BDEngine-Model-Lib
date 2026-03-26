@@ -1,4 +1,4 @@
-package io.github.skubiak0903.core.math;
+package io.github.skubiak0903.core.utils;
 
 import org.joml.Matrix3f;
 import org.joml.Matrix3fc;
@@ -6,6 +6,11 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Quaternionfc;
 import org.joml.Vector3f;
+
+/*
+ *  NOTE: Stolen from minecraft implementation: com.mojang.math
+ *  Added: toArray, multiply4x4RowMajor
+ */
 
 public class MatrixUtils {
 	private static final float G = (float) (3.0F + 2.0F * Math.sqrt(2.0F));
@@ -19,7 +24,7 @@ public class MatrixUtils {
 				m.m33() * factor);
 	}
 
-	public static kotlin.Triple<Quaternionf, Vector3f, Quaternionf> svdDecompose(Matrix3f matrix) {
+	public static SVDDecomposition svdDecompose(Matrix3f matrix) {
 		Matrix3f b = new Matrix3f((Matrix3fc) matrix);
 		b.transpose();
 		b.mul((Matrix3fc) matrix);
@@ -64,7 +69,7 @@ public class MatrixUtils {
 		u.mul((Quaternionfc) qt2);
 		s.transpose().mul((Matrix3fc) u2s);
 		Vector3f scale = new Vector3f(s.m00, s.m11, s.m22);
-		return new kotlin.Triple<Quaternionf, Vector3f, Quaternionf>(u, scale, v.conjugate());
+		return new SVDDecomposition(u, scale, v.conjugate());
 	}
 
 	private static GivensParameters approxGivensQuat(float a11, float a12, float a22) {
@@ -129,6 +134,45 @@ public class MatrixUtils {
 	}
 	
 	public static float[] toArray(Quaternionf q) {
+		if (q == null) throw new IllegalArgumentException("Quaternion cannot be null!");
 		return new float[] {  q.x, q.y, q.z, q.w };
 	}
+	
+	public static Quaternionf arrayToQuaternion(float[] floatArray) {
+		if (floatArray.length != 4) throw new AssertionError("float array doesnt have required lenght 4. It has lenght: " + floatArray.length);
+		return new Quaternionf(floatArray[0], floatArray[1], floatArray[2], floatArray[3]);
+	}
+	
+	public static float[] multiply4x4RowMajor(float[] parentMatrix, float[] local) {
+	    float[] result = new float[16];
+	    
+	    result[0]  = parentMatrix[0] * local[0]  + parentMatrix[1] * local[4]  + parentMatrix[2] * local[8]  + parentMatrix[3] * local[12];
+	    result[1]  = parentMatrix[0] * local[1]  + parentMatrix[1] * local[5]  + parentMatrix[2] * local[9]  + parentMatrix[3] * local[13];
+	    result[2]  = parentMatrix[0] * local[2]  + parentMatrix[1] * local[6]  + parentMatrix[2] * local[10] + parentMatrix[3] * local[14];
+	    result[3]  = parentMatrix[0] * local[3]  + parentMatrix[1] * local[7]  + parentMatrix[2] * local[11] + parentMatrix[3] * local[15];
+	    
+	    result[4]  = parentMatrix[4] * local[0]  + parentMatrix[5] * local[4]  + parentMatrix[6] * local[8]  + parentMatrix[7] * local[12];
+	    result[5]  = parentMatrix[4] * local[1]  + parentMatrix[5] * local[5]  + parentMatrix[6] * local[9]  + parentMatrix[7] * local[13];
+	    result[6]  = parentMatrix[4] * local[2]  + parentMatrix[5] * local[6]  + parentMatrix[6] * local[10] + parentMatrix[7] * local[14];
+	    result[7]  = parentMatrix[4] * local[3]  + parentMatrix[5] * local[7]  + parentMatrix[6] * local[11] + parentMatrix[7] * local[15];
+	    
+	    result[8]  = parentMatrix[8] * local[0]  + parentMatrix[9] * local[4]  + parentMatrix[10] * local[8] + parentMatrix[11] * local[12];
+	    result[9]  = parentMatrix[8] * local[1]  + parentMatrix[9] * local[5]  + parentMatrix[10] * local[9] + parentMatrix[11] * local[13];
+	    result[10] = parentMatrix[8] * local[2]  + parentMatrix[9] * local[6]  + parentMatrix[10] * local[10] + parentMatrix[11] * local[14];
+	    result[11] = parentMatrix[8] * local[3]  + parentMatrix[9] * local[7]  + parentMatrix[10] * local[11] + parentMatrix[11] * local[15];
+	    
+	    result[12] = parentMatrix[12] * local[0] + parentMatrix[13] * local[4] + parentMatrix[14] * local[8] + parentMatrix[15] * local[12];
+	    result[13] = parentMatrix[12] * local[1] + parentMatrix[13] * local[5] + parentMatrix[14] * local[9] + parentMatrix[15] * local[13];
+	    result[14] = parentMatrix[12] * local[2] + parentMatrix[13] * local[6] + parentMatrix[14] * local[10] + parentMatrix[15] * local[14];
+	    result[15] = parentMatrix[12] * local[3] + parentMatrix[13] * local[7] + parentMatrix[14] * local[11] + parentMatrix[15] * local[15];
+	    
+	    return result;
+	}
+	
+	public record SVDDecomposition(
+			Quaternionf leftRotation,
+			Vector3f    scale,
+			Quaternionf rightRotation
+			) {}
+	
 }

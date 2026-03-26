@@ -11,7 +11,8 @@ import org.joml.Vector3f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.skubiak0903.core.math.MatrixUtils;
+import io.github.skubiak0903.core.utils.MatrixUtils;
+import io.github.skubiak0903.core.utils.VecUtils;
 import lombok.Getter;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.minestom.server.component.DataComponents;
@@ -246,8 +247,8 @@ public class BDModelEntity extends BDBaseModelEntity {
 		Point point = rootMeta.getTranslation();
 		Vec scale = rootMeta.getScale();
 		
-		Vector3f pos = vecToJomlVec3(point);
-		Vector3f center = vecToJomlVec3(scale.div(2));
+		Vector3f pos = VecUtils.pointToJomlVec3(point);
+		Vector3f center = VecUtils.pointToJomlVec3(scale.div(2));
 		
 		System.out.println("Pos: " + pos);
 		System.out.println("Center: " + center);
@@ -266,7 +267,7 @@ public class BDModelEntity extends BDBaseModelEntity {
 	private static void rotateBy(BDBaseModelEntity entity, Quaternionf newRotation, Vector3f pivotPoint, int duration) {
 		AbstractDisplayMeta entityMeta = (AbstractDisplayMeta) entity.getEntityMeta();
 		
-		Vector3f currentTranslation = vecToJomlVec3(entityMeta.getTranslation());
+		Vector3f currentTranslation = VecUtils.pointToJomlVec3(entityMeta.getTranslation());
 		System.out.println("Current Translation: " + currentTranslation);
 		currentTranslation.sub(pivotPoint);
 		System.out.println("Translation after sub: " + currentTranslation);
@@ -279,16 +280,16 @@ public class BDModelEntity extends BDBaseModelEntity {
 		System.out.println("New Translation: " + newTranslation);
 		
 		// obróć lokalnie
-		Quaternionf currentLeftRot = arrayToQuaternion(entityMeta.getLeftRotation());
+		Quaternionf currentLeftRot = MatrixUtils.arrayToQuaternion(entityMeta.getLeftRotation());
 		System.out.println("Current Left Rot: " + currentLeftRot);
 		Quaternionf newLeftRot = new Quaternionf(newRotation).mul(currentLeftRot).normalize();
 		System.out.println("New Left Rot: " + newLeftRot);
 		
-		Quaternionf currentRightRot = arrayToQuaternion(entityMeta.getRightRotation());
+		Quaternionf currentRightRot = MatrixUtils.arrayToQuaternion(entityMeta.getRightRotation());
 		System.out.println("Current Right Rot: " + currentRightRot);
 		
 		entity.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
-			meta.setTranslation(vec3ToMinestomVec(newTranslation));
+			meta.setTranslation(VecUtils.vec3ToMinestomVec(newTranslation));
 			meta.setLeftRotation(MatrixUtils.toArray(newLeftRot));
 			meta.setRightRotation(MatrixUtils.toArray(currentRightRot));
 			
@@ -311,13 +312,13 @@ public class BDModelEntity extends BDBaseModelEntity {
 		
 		Point point = rootMeta.getTranslation();
 		Vec scale = rootMeta.getScale();
-		Vector3f pos = vecToJomlVec3(point);
-		Vector3f center = vecToJomlVec3(scale.div(2));
+		Vector3f pos = VecUtils.pointToJomlVec3(point);
+		Vector3f center = VecUtils.pointToJomlVec3(scale.div(2));
 		System.out.println("Pos: " + pos);
 		System.out.println("Center: " + center);
 		Vector3f pivotPoint = new Vector3f(pos).add(center);
 		
-		Quaternionf startRot = arrayToQuaternion(rootMeta.getLeftRotation());
+		Quaternionf startRot = MatrixUtils.arrayToQuaternion(rootMeta.getLeftRotation());
 		Quaternionf diff = new Quaternionf(startRot).difference(newRotation);
 		
 		float diffAngleRad = diff.angle();
@@ -372,36 +373,23 @@ public class BDModelEntity extends BDBaseModelEntity {
 	    AbstractDisplayMeta entityMeta = (AbstractDisplayMeta) entity.getEntityMeta();
 	    
 	    // 1. Pozycja - obracamy o MAŁY KAWAŁEK (stepDelta)
-	    Vector3f pos = vecToJomlVec3(entityMeta.getTranslation());
+	    Vector3f pos = VecUtils.pointToJomlVec3(entityMeta.getTranslation());
 	    pos.sub(pivotPoint);
 	    stepDelta.transform(pos); // Obrót o np. 22.5 stopnia
 	    pos.add(pivotPoint);
 	    
 	    // 2. Rotacja Lewa - doobracamy o MAŁY KAWAŁEK
-	    Quaternionf currentLeft = arrayToQuaternion(entityMeta.getLeftRotation());
+	    Quaternionf currentLeft = MatrixUtils.arrayToQuaternion(entityMeta.getLeftRotation());
 	    Quaternionf newLeft = new Quaternionf(stepDelta).mul(currentLeft).normalize();
 	    
 	    // 3. Wysyłka do klienta
 	    entity.editEntityMeta(AbstractDisplayMeta.class, meta -> {
-	    	meta.setTranslation(vec3ToMinestomVec(pos));
+	    	meta.setTranslation(VecUtils.vec3ToMinestomVec(pos));
 	    	meta.setLeftRotation(MatrixUtils.toArray(newLeft));
 	        
 	    	meta.setTransformationInterpolationDuration(duration);
 	    	meta.setTransformationInterpolationStartDelta(0);
 	    });
-	}
-	
-	private static Quaternionf arrayToQuaternion(float[] floatArray) {
-		if (floatArray.length != 4) throw new AssertionError("float array doesnt have required lenght 4. It has lenght: " + floatArray.length);
-		return new Quaternionf(floatArray[0], floatArray[1], floatArray[2], floatArray[3]);
-	}
-	
-	private static Vector3f vecToJomlVec3(Point point) {
-		return new Vector3f((float) point.x(), (float) point.y(), (float) point.z());
-	}
-	
-	private static Vec vec3ToMinestomVec(Vector3f vec) {
-		return new Vec(vec.x, vec.y, vec.z);
 	}
 	
 	public void setModelRotation(Vector3f xyzRot, int duration) {

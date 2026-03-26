@@ -1,8 +1,14 @@
-package io.github.skubiak0903.core.math;
+package io.github.skubiak0903.core.utils;
 
 import org.joml.Math;
 import org.joml.Matrix3f;
 import org.joml.Quaternionf;
+
+import io.github.skubiak0903.core.utils.GivensParameters;
+
+/*
+ *  NOTE: Stolen from minecraft implementation: com.mojang.math
+ */
 
 public final class GivensParameters {
   private final float sinHalf;
