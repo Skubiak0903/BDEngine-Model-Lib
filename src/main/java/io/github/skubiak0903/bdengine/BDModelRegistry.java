@@ -1,4 +1,4 @@
-package io.github.skubiak0903.core.bdengine;
+package io.github.skubiak0903.bdengine;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,8 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.skubiak0903.core.bdengine.entity.BDModelEntity;
-import io.github.skubiak0903.core.bdengine.entity.BDModelEntity.BDModelEntitySchema;
+import io.github.skubiak0903.bdengine.entity.BDModelEntity;
+import io.github.skubiak0903.bdengine.entity.BDModelEntity.BDModelEntitySchema;
 
 /**
  * Registry for managing BDEngine models.

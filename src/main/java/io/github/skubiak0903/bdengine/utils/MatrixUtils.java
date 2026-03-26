@@ -1,4 +1,4 @@
-package io.github.skubiak0903.core.utils;
+package io.github.skubiak0903.bdengine.utils;
 
 import org.joml.Matrix3f;
 import org.joml.Matrix3fc;

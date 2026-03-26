@@ -1,10 +1,10 @@
-package io.github.skubiak0903.core.utils;
+package io.github.skubiak0903.bdengine.utils;
 
 import org.joml.Math;
 import org.joml.Matrix3f;
 import org.joml.Quaternionf;
 
-import io.github.skubiak0903.core.utils.GivensParameters;
+import io.github.skubiak0903.bdengine.utils.GivensParameters;
 
 /*
  *  NOTE: Stolen from minecraft implementation: com.mojang.math

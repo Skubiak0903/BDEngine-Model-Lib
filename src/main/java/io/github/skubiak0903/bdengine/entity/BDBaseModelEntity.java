@@ -1,4 +1,4 @@
-package io.github.skubiak0903.core.bdengine.entity;
+package io.github.skubiak0903.bdengine.entity;
 
 import java.util.function.Consumer;
 

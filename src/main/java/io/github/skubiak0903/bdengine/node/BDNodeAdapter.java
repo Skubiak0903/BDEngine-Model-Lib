@@ -1,4 +1,4 @@
-package io.github.skubiak0903.core.bdengine.node;
+package io.github.skubiak0903.bdengine.node;
 
 import java.lang.reflect.Type;
 

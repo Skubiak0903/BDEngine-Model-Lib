@@ -1,4 +1,4 @@
-package io.github.skubiak0903.core.bdengine;
+package io.github.skubiak0903.bdengine;
 
 import java.io.StringReader;
 import java.lang.reflect.Type;
@@ -20,15 +20,15 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
-import io.github.skubiak0903.core.bdengine.entity.BDModelEntity;
-import io.github.skubiak0903.core.bdengine.entity.BDModelEntity.BDModelEntitySchema;
-import io.github.skubiak0903.core.bdengine.node.BDNode;
-import io.github.skubiak0903.core.bdengine.node.BDNodeAdapter;
-import io.github.skubiak0903.core.bdengine.node.BDProject;
-import io.github.skubiak0903.core.utils.MatrixUtils;
-import io.github.skubiak0903.core.utils.VecUtils;
-import io.github.skubiak0903.core.utils.MatrixUtils.SVDDecomposition;
-import io.github.skubiak0903.core.bdengine.node.BDObject;
+import io.github.skubiak0903.bdengine.entity.BDModelEntity;
+import io.github.skubiak0903.bdengine.entity.BDModelEntity.BDModelEntitySchema;
+import io.github.skubiak0903.bdengine.node.BDNode;
+import io.github.skubiak0903.bdengine.node.BDNodeAdapter;
+import io.github.skubiak0903.bdengine.node.BDObject;
+import io.github.skubiak0903.bdengine.node.BDProject;
+import io.github.skubiak0903.bdengine.utils.MatrixUtils;
+import io.github.skubiak0903.bdengine.utils.VecUtils;
+import io.github.skubiak0903.bdengine.utils.MatrixUtils.SVDDecomposition;
 import net.minestom.server.coordinate.Vec;
 
 /**

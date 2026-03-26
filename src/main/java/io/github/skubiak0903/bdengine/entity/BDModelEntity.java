@@ -1,4 +1,4 @@
-package io.github.skubiak0903.core.bdengine.entity;
+package io.github.skubiak0903.bdengine.entity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,8 +11,8 @@ import org.joml.Vector3f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.skubiak0903.core.utils.MatrixUtils;
-import io.github.skubiak0903.core.utils.VecUtils;
+import io.github.skubiak0903.bdengine.utils.MatrixUtils;
+import io.github.skubiak0903.bdengine.utils.VecUtils;
 import lombok.Getter;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.minestom.server.component.DataComponents;

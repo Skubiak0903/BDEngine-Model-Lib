@@ -1,7 +1,7 @@
-package io.github.skubiak0903.core.bdengine.command;
+package io.github.skubiak0903.bdengine.command;
 
-import io.github.skubiak0903.core.bdengine.BDModelRegistry;
-import io.github.skubiak0903.core.bdengine.entity.BDModelEntity;
+import io.github.skubiak0903.bdengine.BDModelRegistry;
+import io.github.skubiak0903.bdengine.entity.BDModelEntity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.command.builder.Command;
