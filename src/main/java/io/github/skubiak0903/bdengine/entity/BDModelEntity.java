@@ -329,7 +329,7 @@ public class BDModelEntity extends BDBaseModelEntity {
      * @param delta		The relative translation vector.
      * @param duration	Interpolation duration in ticks.
      */
-	public void translate(Vec delta, int duration) {
+	public void translateModel(Vec delta, int duration) {
 		Vec newTranslation = this.globalTranslation.add(delta);
 	    setModelTranslation(newTranslation, duration, false);
 	}
@@ -345,7 +345,7 @@ public class BDModelEntity extends BDBaseModelEntity {
      * @param duration	Interpolation duration in ticks.
      * @param force     If {@code true}, bypasses the similarity check and forces a metadata update.
      */
-	public void translate(Vec delta, int duration, boolean force) {
+	public void translateModel(Vec delta, int duration, boolean force) {
 		Vec newTranslation = this.globalTranslation.add(delta);
 	    setModelTranslation(newTranslation, duration, force);
 	}
