@@ -5,6 +5,7 @@ import java.util.List;
 public class BDObject implements BDNode{
 	public boolean isItemDisplay;
 	public boolean isBlockDisplay;
+	public boolean isTextDisplay;
 	public String name;
     public Brightness brightness;
     public int emissiveIntensity;

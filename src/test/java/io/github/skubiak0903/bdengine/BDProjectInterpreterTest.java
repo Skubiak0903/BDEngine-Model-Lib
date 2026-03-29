@@ -4,6 +4,7 @@ import static io.github.skubiak0903.bdengine.utils.QuaternionAssert.assertEquals
 import static io.github.skubiak0903.bdengine.utils.VecAssert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -12,7 +13,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import io.github.skubiak0903.bdengine.entity.BDModelEntity.BDModelEntitySchema;
+import io.github.skubiak0903.bdengine.entity.BDModelEntitySchema;
+import io.github.skubiak0903.bdengine.entity.BDModelEntitySchema.DisplayType;
 import net.minestom.server.coordinate.Vec;
 
 public class BDProjectInterpreterTest {
@@ -128,33 +130,31 @@ public class BDProjectInterpreterTest {
             
             BDModelEntitySchema schema0 = schemas.get(0);
             assertNotNull(schema0, "First Schema should not be null");
-            assertEquals(true, schema0.isBlockDisplay(), "First object should be a block display");
-            assertEquals(false, schema0.isItemDisplay(), "First object shouldn't be a item display");
-            assertEquals(5, schema0.blockLight(), "Block light should be 5");
-            assertEquals(10, schema0.skyLight(), "Sky light should be 10");
-            assertEquals("oak_log[axis=y]", schema0.displayThingSchema(), "Name should match");
-            assertEquals(null, schema0.headTexture(), "Head texture should be null");
-            assertEquals(1.0f, schema0.width(), "Width should be 1.0f");
-            assertEquals(1.0f, schema0.height(), "Height should be 1.0f");
-            assertEquals(new Quaternionf().rotateY((float) Math.toRadians(1)), schema0.rotationLeft(), "Left Rotation should match");
-            assertEquals(new Quaternionf().identity(), schema0.rotationRight(), "Right Rotation should match");
-            assertEquals(new Vec(1, 1, 0), schema0.translation(), "Translation should match");
-            assertEquals(new Vec(1, 1, 1), schema0.scale(), "Scale should match");
+            assertTrue(schema0.getType() == DisplayType.BLOCK,  "First object should be block display");
+            assertEquals(5, schema0.getBlockLight(), "Block light should be 5");
+            assertEquals(10, schema0.getSkyLight(), "Sky light should be 10");
+            assertEquals("oak_log[axis=y]", schema0.getDisplayContent(), "Name should match");
+            assertEquals(null, schema0.getHeadTexture(), "Head texture should be null");
+            assertEquals(1.0f, schema0.getWidth(), "Width should be 1.0f");
+            assertEquals(1.0f, schema0.getHeight(), "Height should be 1.0f");
+            assertEquals(new Quaternionf().rotateY((float) Math.toRadians(1)), schema0.getRotationRight(), "Right Rotation should match");
+            assertEquals(new Quaternionf().identity(), schema0.getRotationLeft(), "Left Rotation should match");
+            assertEquals(new Vec(1, 1, 0), schema0.getTranslation(), "Translation should match");
+            assertEquals(new Vec(1, 1, 1), schema0.getScale(), "Scale should match");
             
             BDModelEntitySchema schema1 = schemas.get(1);
             assertNotNull(schema1, "Second Schema should not be null");
-            assertEquals(false, schema1.isBlockDisplay(),"Second object shouldn't be a block display");
-            assertEquals(true, schema1.isItemDisplay(), "Second object should be a item display");
-            assertEquals(0, schema1.blockLight(), "Block light should be 5");
-            assertEquals(15, schema1.skyLight(), "Sky light should be 10");
-            assertEquals("torchflower[display=none]", schema1.displayThingSchema(), "Name should match");
-            assertEquals("", schema1.headTexture(), "Head texture should be null");
-            assertEquals(1.0f, schema1.width(), "Width should be 1.0f");
-            assertEquals(1.0f, schema1.height(), "Height should be 1.0f");
-            assertEquals(new Quaternionf().identity(), schema1.rotationLeft(), "Left Rotation should match");
-            assertEquals(new Quaternionf().identity(), schema1.rotationRight(), "Right Rotation should match");
-            assertEquals(new Vec(0.0625, 0.5, 0.5), schema1.translation(), "Translation should match");
-            assertEquals(new Vec(2.3, 5, 0.5), schema1.scale(), "Scale should match");
+            assertTrue(schema1.getType() == DisplayType.ITEM, "Second object should be item display");
+            assertEquals(0, schema1.getBlockLight(), "Block light should be 5");
+            assertEquals(15, schema1.getSkyLight(), "Sky light should be 10");
+            assertEquals("torchflower[display=none]", schema1.getDisplayContent(), "Name should match");
+            assertEquals("", schema1.getHeadTexture(), "Head texture should be null");
+            assertEquals(1.0f, schema1.getWidth(), "Width should be 1.0f");
+            assertEquals(1.0f, schema1.getHeight(), "Height should be 1.0f");
+            assertEquals(new Quaternionf().identity(), schema1.getRotationRight(), "Right Rotation should match");
+            assertEquals(new Quaternionf().identity(), schema1.getRotationLeft(), "Left Rotation should match");
+            assertEquals(new Vec(0.0625, 0.5, 0.5), schema1.getTranslation(), "Translation should match");
+            assertEquals(new Vec(2.3, 5, 0.5), schema1.getScale(), "Scale should match");
         }
         
         @Test
@@ -201,18 +201,17 @@ public class BDProjectInterpreterTest {
             
             BDModelEntitySchema schema0 = schemas.get(0);
             assertNotNull(schema0, "First Schema should not be null");
-            assertEquals(true, schema0.isBlockDisplay(), "First object should be a block display");
-            assertEquals(false, schema0.isItemDisplay(), "First object shouldn't be a item display");
-            assertEquals(5, schema0.blockLight(), "Block light should be 5");
-            assertEquals(10, schema0.skyLight(), "Sky light should be 10");
-            assertEquals("oak_log[axis=y]", schema0.displayThingSchema(), "Name should match");
-            assertEquals(null, schema0.headTexture(), "Head texture should be null");
-            assertEquals(1.0f, schema0.width(), "Width should be 1.0f");
-            assertEquals(1.0f, schema0.height(), "Height should be 1.0f");
-            assertEquals(new Quaternionf().rotateY((float) Math.toRadians(1)), schema0.rotationLeft(), "Left Rotation should match");
-            assertEquals(new Quaternionf().identity(), schema0.rotationRight(), "Right Rotation should match");
-            assertEquals(new Vec(1, 1, 0), schema0.translation(), "Translation should match");
-            assertEquals(new Vec(1, 1, 1), schema0.scale(), "Scale should match");
+            assertTrue(schema0.getType() == DisplayType.BLOCK,  "Object should be block display");
+            assertEquals(5, schema0.getBlockLight(), "Block light should be 5");
+            assertEquals(10, schema0.getSkyLight(), "Sky light should be 10");
+            assertEquals("oak_log[axis=y]", schema0.getDisplayContent(), "Name should match");
+            assertEquals(null, schema0.getHeadTexture(), "Head texture should be null");
+            assertEquals(1.0f, schema0.getWidth(), "Width should be 1.0f");
+            assertEquals(1.0f, schema0.getHeight(), "Height should be 1.0f");
+            assertEquals(new Quaternionf().rotateY((float) Math.toRadians(1)), schema0.getRotationRight(), "Right Rotation should match");
+            assertEquals(new Quaternionf().identity(), schema0.getRotationLeft(), "Left Rotation should match");
+            assertEquals(new Vec(1, 1, 0), schema0.getTranslation(), "Translation should match");
+            assertEquals(new Vec(1, 1, 1), schema0.getScale(), "Scale should match");
         }
         
         @Test
@@ -260,19 +259,18 @@ public class BDProjectInterpreterTest {
             assertEquals(schemas.size(), 1, "Should have 1 schema (1 children)");
             
             BDModelEntitySchema schema0 = schemas.get(0);
-            assertNotNull(schema0, "First Schema should not be null");
-            assertEquals(false, schema0.isBlockDisplay(),"First object shouldn't be a block display");
-            assertEquals(true, schema0.isItemDisplay(), "First object should be a item display");
-            assertEquals(0, schema0.blockLight(), "Block light should be 5");
-            assertEquals(15, schema0.skyLight(), "Sky light should be 10");
-            assertEquals("torchflower[display=none]", schema0.displayThingSchema(), "Name should match");
-            assertEquals("", schema0.headTexture(), "Head texture should be null");
-            assertEquals(1.0f, schema0.width(), "Width should be 1.0f");
-            assertEquals(1.0f, schema0.height(), "Height should be 1.0f");
-            assertEquals(new Quaternionf().identity(), schema0.rotationLeft(), "Left Rotation should match");
-            assertEquals(new Quaternionf().identity(), schema0.rotationRight(), "Right Rotation should match");
-            assertEquals(new Vec(0.0625, 0.5, 0.5), schema0.translation(), "Translation should match");
-            assertEquals(new Vec(2.3, 5, 0.5), schema0.scale(), "Scale should match");
+            assertNotNull(schema0, "Second Schema should not be null");
+            assertTrue(schema0.getType() == DisplayType.ITEM, "Object should be item display");
+            assertEquals(0, schema0.getBlockLight(), "Block light should be 5");
+            assertEquals(15, schema0.getSkyLight(), "Sky light should be 10");
+            assertEquals("torchflower[display=none]", schema0.getDisplayContent(), "Name should match");
+            assertEquals("", schema0.getHeadTexture(), "Head texture should be null");
+            assertEquals(1.0f, schema0.getWidth(), "Width should be 1.0f");
+            assertEquals(1.0f, schema0.getHeight(), "Height should be 1.0f");
+            assertEquals(new Quaternionf().identity(), schema0.getRotationRight(), "Right Rotation should match");
+            assertEquals(new Quaternionf().identity(), schema0.getRotationLeft(), "Left Rotation should match");
+            assertEquals(new Vec(0.0625, 0.5, 0.5), schema0.getTranslation(), "Translation should match");
+            assertEquals(new Vec(2.3, 5, 0.5), schema0.getScale(), "Scale should match");
         }
 	}
 	

@@ -21,7 +21,9 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
 import io.github.skubiak0903.bdengine.entity.BDModelEntity;
-import io.github.skubiak0903.bdengine.entity.BDModelEntity.BDModelEntitySchema;
+import io.github.skubiak0903.bdengine.entity.BDModelEntitySchema;
+import io.github.skubiak0903.bdengine.entity.BDModelEntitySchema.DisplayType;
+import io.github.skubiak0903.bdengine.exception.InterpretationException;
 import io.github.skubiak0903.bdengine.node.BDNode;
 import io.github.skubiak0903.bdengine.node.BDNodeAdapter;
 import io.github.skubiak0903.bdengine.node.BDObject;
@@ -199,11 +201,25 @@ public class BDProjectInterpreter {
         		node.tagHead.Value : null;
         
         
+        // Type
+        List<DisplayType> matches = new ArrayList<>();
+        if (node.isBlockDisplay) matches.add(DisplayType.BLOCK);
+        if (node.isItemDisplay)  matches.add(DisplayType.ITEM);
+        if (node.isTextDisplay)  matches.add(DisplayType.TEXT);
+
+        if (matches.size() != 1) {
+            throw new InterpretationException("Error in node '" + node.name + "': Found " + matches.size() + " types " + matches + ", but exactly 1 is required.");
+        }
+
+        DisplayType type = matches.get(0);
+        
+        
+
         return new BDModelEntitySchema(
-        		node.isItemDisplay, node.isBlockDisplay, 
-        		scale, translation, leftRotation, rightRotation, node.name, 
+        		type, 
+        		scale, translation, leftRotation, rightRotation,
         		brightnessBlock, brightnessSky, width, height,
-        		headTexture);
+        		node.name, headTexture);
   	}
 	
 	

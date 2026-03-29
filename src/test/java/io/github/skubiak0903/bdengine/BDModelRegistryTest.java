@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import io.github.skubiak0903.bdengine.entity.BDModelEntity;
-import io.github.skubiak0903.bdengine.entity.BDModelEntity.BDModelEntitySchema;
+import io.github.skubiak0903.bdengine.entity.BDModelEntitySchema;
 
 public class BDModelRegistryTest {
     private static final String TEST_MODEL_JSON = """
