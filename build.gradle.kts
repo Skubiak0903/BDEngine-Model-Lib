@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.github.Skubiak0903"
-version = "0.1.0" 
+version = "0.1.1" 
 
 dependencies {
     implementation("net.minestom:minestom:2026.03.03-1.21.11")
@@ -33,5 +33,13 @@ tasks.test {
     testLogging {
         events("passed", "skipped", "failed")
         showStandardStreams = true
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+        }
     }
 }
