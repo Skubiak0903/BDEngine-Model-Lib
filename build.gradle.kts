@@ -5,6 +5,9 @@ plugins {
     id("io.freefair.lombok") version "9.2.0"
 }
 
+group = "com.github.Skubiak0903"
+version = "0.1.0" 
+
 dependencies {
     implementation("net.minestom:minestom:2026.03.03-1.21.11")
     
