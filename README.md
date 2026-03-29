@@ -1,4 +1,5 @@
 # BDEngine Model Lib
+[![](https://jitpack.io/v/Skubiak0903/BDEngine-Model-Lib.svg)](https://jitpack.io/#Skubiak0903/BDEngine-Model-Lib)
 
 A simple and lightweight library for **Minestom**. It allows for easy importing [BDEngine](https://bdengine.app/) models into Minecraft, without having to worry about incorrect interpolation or other quaternion magic.
 
