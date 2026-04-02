@@ -6,8 +6,8 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import io.github.skubiak0903.bdengine.BDModelRegistry;
+import io.github.skubiak0903.bdengine.entity.PassengerEntity;
 import io.github.skubiak0903.bdengine.entity.BDModelEntity;
-import io.github.skubiak0903.bdengine.entity.BDPassengerEntity;
 import io.github.skubiak0903.bdengine.utils.VecUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -121,7 +121,7 @@ public class BDModelCMD extends Command {
                 }
 	            
 	            final String ident = context.get(identArg);
-	            BDModelEntity model = BDModelRegistry.get(ident);
+	            var model = BDModelRegistry.get(ident);
 	            
 	    		if (model == null) {
 	    			Component msg = Component.text("Model with identifier `%s`, deosn't exist!".formatted(ident), NamedTextColor.GRAY);
@@ -394,7 +394,7 @@ public class BDModelCMD extends Command {
 	        	Vec scaleVec = new Vec(0.5f * scale);
 	        	Vec translationVec = new Vec(-0.25f * scale).add(pivot.x, pivot.y, pivot.z); // half of a scale
 	        	
-	        	var pivotPassenger = new BDPassengerEntity(EntityType.BLOCK_DISPLAY, scaleVec, translationVec, new Quaternionf(), new Quaternionf());
+	        	var pivotPassenger = new PassengerEntity(EntityType.BLOCK_DISPLAY, scaleVec, translationVec, new Quaternionf(), new Quaternionf());
 	        	pivotPassenger.editEntityMeta(BlockDisplayMeta.class, (meta) -> {
 	        		meta.setBlockState(Block.BLUE_STAINED_GLASS);
 	        		meta.setHasGlowingEffect(true);

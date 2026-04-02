@@ -1,109 +1,109 @@
 package io.github.skubiak0903.bdengine.entity;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
+import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import io.github.skubiak0903.bdengine.utils.MatrixUtils;
 import io.github.skubiak0903.bdengine.utils.VecUtils;
-import lombok.AccessLevel;
 import lombok.Getter;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
-import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
-import net.minestom.server.entity.metadata.display.AbstractDisplayMeta;
 import net.minestom.server.instance.Instance;
-import net.minestom.server.timer.Task;
-import net.minestom.server.timer.TaskSchedule;
 
 @Getter
 public class BDModelEntity extends BDBaseModelEntity {
-	private static final Logger LOGGER = LoggerFactory.getLogger(BDModelEntity.class);
+	public static final float SLERP_ANGLE = 22.5f;
 	
-	@Getter(value = AccessLevel.NONE)
-	private final List<BDBaseModelEntity> waitingPassengersList;
-	@Getter(value = AccessLevel.NONE)
-	private final List<Task> ongoingRotations = new ArrayList<>();
-	
-	protected Vec globalScale 	    = Vec.ONE;
-	protected Vec globalTranslation = Vec.ZERO;
-	protected Quaternionf globalRotation  = new Quaternionf(); // identity quaternion
-	protected int globalPosRotDuration	       = 0;
-	protected int globalTransformationDuration = 0;
-	
-	protected Vector3f pivotPoint = new Vector3f(0.5f,0.5f,0.5f);
+    private final ModelBehavior behavior;
 	
 	
-	
-	public BDModelEntity(List<BDModelEntitySchema> entitySchemas) {
-		this(entitySchemas, Vec.ONE, Vec.ZERO);
-	}
-		
-	public BDModelEntity(List<BDModelEntitySchema> entitySchemas, Vec initialScale, Vec initialTranslation) {
-		super(EntityType.BLOCK_DISPLAY);
-		if (entitySchemas      == null) throw new IllegalArgumentException("entitySchemas cannot be null");
-		if (initialScale 	   == null) throw new IllegalArgumentException("initialScale cannot be null");
-		if (initialTranslation == null) throw new IllegalArgumentException("initialTranslation cannot be null");
-				
-		
-		List<BDBaseModelEntity> tempList = new ArrayList<>();
- 		/*if (entitySchemas.size() == 1) {
- 			// don't do passengers, just init this entity as single model entity
- 		} else {*/
- 			for (var schema : entitySchemas) {
- 				var entity = BDPassengerEntity.createPassengerEntity(schema, initialScale, initialTranslation);
- 				tempList.add(entity);
- 			}
- 		//}
- 		 		
- 		
- 		this.waitingPassengersList = new ArrayList<>(tempList);
-
-		this.globalScale = initialScale;
-		this.globalTranslation = initialTranslation;
+	public BDModelEntity(BDModelEntitySchema schema) {
+		this(List.of(schema));
 	}
 	
-
+	public BDModelEntity(BDModelEntitySchema schema, Vec initialScale, Vec initialTranslation) {
+		this(List.of(schema), initialScale, initialTranslation);
+	}
+	
+	public BDModelEntity(List<BDModelEntitySchema> schemas) {
+		this(schemas, Vec.ONE, Vec.ZERO);
+	}
+	
+	public BDModelEntity(List<BDModelEntitySchema> schemas, Vec initialScale, Vec initialTranslation) {
+		EntityType type = schemas.size() > 1 ? EntityType.BLOCK_DISPLAY : schemas.get(0).getType().getEntityType();
+		super(type);
+		
+		this.behavior = schemas.size() > 1 ? 
+				new MutliEntityModelBehavior(this, schemas, initialScale, initialTranslation) :
+				new SingleEntityModelBehavior(this, schemas.get(0), initialScale, initialTranslation);
+	}
+	
+	
+	
+	/*
+	 * Overrides
+	 */
 	@Override
 	public CompletableFuture<Void> setInstance(Instance instance, Pos spawnPosition) {
 		var future = super.setInstance(instance, spawnPosition);
-		// we need to add passengers here becouse Entity#addPassenger requires for passenger entity to be registered (eg. instance need to be set)
-
+		System.out.println("spawned main entity");
 		return future.thenAccept((_) -> {
-			waitingPassengersList.forEach((entity) -> {
-				entity.setInstance(instance, spawnPosition);
-				this.acquirable().sync((root) -> {
-					root.addPassenger(entity);
-				});
-			});
-			
-			// clear list after successful passenger initialization
-			waitingPassengersList.clear();
+			behavior.setInstance(instance, spawnPosition);
+			System.out.println("Set behaviour instance");
 		});
 	}
-
 	
 	@Override
 	protected void remove(boolean permanent) {
-		forEachPassenger((passenger) -> {
-			passenger.remove();
-		});
+		behavior.remove(permanent);
 		super.remove(permanent);
 	}
 	
 	@Override
-	public void setView(float yaw, float pitch) {
-		super.setView(yaw, pitch);
-		forEachPassenger((passenger) -> {
-			passenger.setView(yaw, pitch);
-		});
+	public void setView(float yaw, float pitch, float headRotation) {
+		behavior.setView(yaw, pitch);
+		super.setView(yaw, pitch, headRotation);
+	}
+	
+	@Override
+	public CompletableFuture<Void> teleport(Pos position, Vec velocity, long @Nullable [] chunks, int flags,
+			boolean shouldConfirm) {
+		behavior.teleport(position);
+		return super.teleport(position, velocity, chunks, flags, shouldConfirm);
+	}
+	
+	
+	
+	
+	/*
+	 * Getters
+	 */
+	public Vec getGlobalScale() {
+		return behavior.globalScale;
+	}
+
+	public Vec getGlobalTranslation() {
+		return behavior.globalTranslation;
+	}
+
+	public Quaternionf getGlobalRotation() {
+		return behavior.globalRotation;
+	}
+
+	public Vector3f getPivotPoint() {
+		return behavior.pivotPoint;
+	}
+
+	public int getGlobalPosRotDuration() {
+		return behavior.globalPosRotDuration;
+	}
+
+	public int getGlobalTransformationDuration() {
+		return behavior.globalTransformationDuration;
 	}
 	
 	
@@ -129,7 +129,7 @@ public class BDModelEntity extends BDBaseModelEntity {
      * @param position	New entity position.
      * @param duration  Interpolation duration in ticks.
      */
-	public void teleport(Pos position, int duration) {		
+	public void teleport(Pos position, int duration) {
 		setPosRotInterpolationDuration(duration);
 		
 		this.scheduleNextTick((entity) -> {
@@ -146,7 +146,7 @@ public class BDModelEntity extends BDBaseModelEntity {
 	 * @param newPivotPoint New pivot point vector
 	 */
 	public void setPivotPoint(Vector3f newPivotPoint) {
-		this.pivotPoint.set(newPivotPoint);
+		behavior.pivotPoint.set(newPivotPoint);
 	}
 
 	/**
@@ -182,17 +182,7 @@ public class BDModelEntity extends BDBaseModelEntity {
      * @param force     If {@code true}, updates all passengers regardless of the current duration.
      */
 	public void setTransformationInterpolationDuration(int duration, boolean force) {
-		if (!force && globalTransformationDuration == duration) return;
-		
-		globalTransformationDuration = duration;
-		this.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
-			meta.setTransformationInterpolationDuration(duration);
-		});
-		forEachPassenger((passenger) -> {
-			passenger.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
-				meta.setTransformationInterpolationDuration(duration);
-			});
-		});
+		behavior.setTransformationInterpolationDuration(duration, force);
 	}
 	
 	
@@ -213,25 +203,16 @@ public class BDModelEntity extends BDBaseModelEntity {
      * @param force     If {@code true}, updates all passengers regardless of the current duration.
      */
 	public void setPosRotInterpolationDuration(int duration, boolean force) {
-		if (!force && globalPosRotDuration == duration) return;
-		
-		globalPosRotDuration = duration;
-		this.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
-			meta.setPosRotInterpolationDuration(duration);
-		});
-		forEachPassenger((passenger) -> {
-			passenger.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
-				meta.setPosRotInterpolationDuration(duration);
-			});
-		});
+		behavior.setPosRotInterpolationDuration(duration, force);
 	}
+	
+	
 	
 	
 	
 	/*
 	 * 	 SCALE
 	 */
-	
 	
 	
 	/**
@@ -256,10 +237,9 @@ public class BDModelEntity extends BDBaseModelEntity {
      * @param force     If {@code true}, bypasses the similarity check and forces a metadata update.
      */
 	public void scaleModel(Vec scalar, int duration, boolean force) {
-		Vec newScale = globalScale.mul(scalar);
+		Vec newScale = behavior.globalScale.mul(scalar);
 		setModelScale(newScale, duration, force);
 	}
-	
 	
 	
 	/**
@@ -283,44 +263,19 @@ public class BDModelEntity extends BDBaseModelEntity {
      * @param duration  Interpolation duration in ticks.
      * @param force     If {@code true}, bypasses the similarity check and forces a metadata update.
 	 */
-	public void setModelScale(Vec newScale, int duration, boolean force) {
-		if (!force && VecUtils.isSimilar(globalScale, newScale)) return; // skip if scale is similar
-		
-		this.globalScale = newScale;
-	    this.globalTransformationDuration = duration; // no need to check if duration is the same
-	    forEachPassenger((passenger) -> {
-	        passenger.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
-	        	Vec defScale = passenger.getDefaultScale();
-	            Vec defTranslation = passenger.getDefaultTranslation();
-
-	            // scale
-	            Vec newEntityScale = defScale.mul(newScale);
-	            
-	            
-	            // translation
-	            Vec baseTranslation = defTranslation.mul(newScale).add(globalTranslation);
-	            
-	    		// rotate translation around pivotPoint
-	    		Vector3f newEntityTranslation = new Vector3f(VecUtils.pointToJomlVec3(baseTranslation))
-	    	            .sub(pivotPoint)
-	    	            .rotate(globalRotation)
-	    	            .add(pivotPoint);
-	            
-	            meta.setScale(newEntityScale);
-	            meta.setTranslation(VecUtils.vec3ToMinestomVec(newEntityTranslation));
-
-	            meta.setTransformationInterpolationDuration(duration);
-	            meta.setTransformationInterpolationStartDelta(0);
-	            
-	        });
-	    });
+	public void setModelScale(Vec newScale, int duration, boolean force) { 
+		behavior.setModelScale(newScale, duration, force);
 	}
+	
+	
+	
+	
+	
 	
 	
 	/*
 	 *  TRANSLATIONS
 	 */
-	
 	
 	
 	/**
@@ -330,8 +285,7 @@ public class BDModelEntity extends BDBaseModelEntity {
      * @param duration	Interpolation duration in ticks.
      */
 	public void translateModel(Vec delta, int duration) {
-		Vec newTranslation = this.globalTranslation.add(delta);
-	    setModelTranslation(newTranslation, duration, false);
+	    setModelTranslation(delta, duration, false);
 	}
 	
 	/**
@@ -346,10 +300,9 @@ public class BDModelEntity extends BDBaseModelEntity {
      * @param force     If {@code true}, bypasses the similarity check and forces a metadata update.
      */
 	public void translateModel(Vec delta, int duration, boolean force) {
-		Vec newTranslation = this.globalTranslation.add(delta);
+		Vec newTranslation = behavior.globalTranslation.add(delta);
 	    setModelTranslation(newTranslation, duration, force);
 	}
-	
 	
 	
 	/**
@@ -374,28 +327,9 @@ public class BDModelEntity extends BDBaseModelEntity {
      * @param force          If {@code true}, bypasses the similarity check and forces a metadata update.
      */
 	public void setModelTranslation(Vec newTranslation, int duration, boolean force) {
-		if (!force && VecUtils.isSimilar(globalTranslation, newTranslation)) return;
-		
-		this.globalTranslation = newTranslation;
-		this.globalTransformationDuration = duration;
-		forEachPassenger((passenger) -> {
-	        passenger.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
-	        	Vec defTranslation = passenger.getDefaultTranslation();
-	        	Vec baseTranslation = defTranslation.mul(globalScale).add(newTranslation);
-	        	
-	    		// rotate translation around pivotPoint
-	    		Vector3f newEntityTranslation = new Vector3f(VecUtils.pointToJomlVec3(baseTranslation))
-	    	            .sub(pivotPoint)
-	    	            .rotate(globalRotation)
-	    	            .add(pivotPoint);
-	        	
-	            meta.setTranslation(VecUtils.vec3ToMinestomVec(newEntityTranslation));
-	            
-	            meta.setTransformationInterpolationDuration(duration);
-	            meta.setTransformationInterpolationStartDelta(0);
-	        });
-	    });
+		behavior.setModelTranslation(newTranslation, duration, force);
 	}
+	
 	
 	
 	
@@ -428,10 +362,9 @@ public class BDModelEntity extends BDBaseModelEntity {
 	 * @param force    If {@code true}, bypasses the similarity check and forces a metadata update.
 	 */
 	public void rotateModelLerp(Quaternionf delta, int duration, boolean force) {						
-		Quaternionf targetRotation = new Quaternionf(this.globalRotation).premul(delta);
+		Quaternionf targetRotation = new Quaternionf(behavior.globalRotation).premul(delta);
 		setModelRotationLerp(targetRotation, duration, force);
 	}
-	
 	
 	/**
 	 * Basic linear rotation (LERP). 
@@ -452,17 +385,8 @@ public class BDModelEntity extends BDBaseModelEntity {
      * @param duration      Interpolation duration in ticks.
      * @param force         If {@code true}, bypasses the similarity check and forces a metadata update.
 	 */
-	public void setModelRotationLerp(Quaternionf newRotation, int duration, boolean force) {					
-		if (!force && globalRotation.equals(newRotation, 1e-6f)) return;
-		
-		cancelRotationTasks(globalRotation, false);
-		
-		this.globalRotation.set(newRotation);
-		this.globalTransformationDuration = duration;
-		
-		forEachPassenger((passenger) -> {
-			setPassengerRotation(passenger, newRotation, duration);
-		});
+	public void setModelRotationLerp(Quaternionf newRotation, int duration, boolean force) {
+		behavior.setModelRotationLerp(newRotation, duration, force);
 	}
 	
 	
@@ -486,7 +410,7 @@ public class BDModelEntity extends BDBaseModelEntity {
 	 * @param duration 		Interpolation duration in ticks.
 	 */
 	public void rotateModelSlerp(Quaternionf delta, int duration) {
-		rotateModelSlerp(delta, duration, 22.5f);
+		rotateModelSlerp(delta, duration, SLERP_ANGLE);
 	}
 	
 	/**
@@ -519,7 +443,7 @@ public class BDModelEntity extends BDBaseModelEntity {
 	 * @param force 	 	If {@code true}, bypasses the similarity check and forces a metadata update.
 	 */
 	public void rotateModelSlerp(Quaternionf delta, int duration, float stepFactor, boolean force) {
-		Quaternionf targetRotation = new Quaternionf(this.globalRotation).premul(delta);
+		Quaternionf targetRotation = new Quaternionf(behavior.globalRotation).premul(delta);
 		setModelRotationSlerp(targetRotation, duration, stepFactor, force);
 	}
 	
@@ -531,7 +455,7 @@ public class BDModelEntity extends BDBaseModelEntity {
      * @param duration  	Interpolation duration in ticks.
 	 */
 	public void setModelRotationSlerp(Quaternionf newRotation, int duration) {
-		setModelRotationSlerp(newRotation, duration, 22.5f);
+		setModelRotationSlerp(newRotation, duration, SLERP_ANGLE);
 	}
 
 	/**
@@ -557,60 +481,7 @@ public class BDModelEntity extends BDBaseModelEntity {
      * @param force     	If {@code true}, bypasses the similarity check and forces a metadata update.
 	 */
 	public void setModelRotationSlerp(Quaternionf newRotation, int duration, float stepFactor, boolean force) {
-		if (!force && globalRotation.equals(newRotation, 1e-6f)) return;
-		
-		cancelRotationTasks(globalRotation, false); // cancel ongoing rotations
-
-		// we need previous rotation, before changing it to newRotation
-		Quaternionf startRot = new Quaternionf(globalRotation);
-		
-		this.globalRotation.set(newRotation);
-		this.globalTransformationDuration = duration;
-		
-		
-		Quaternionf diff = new Quaternionf(startRot).difference(newRotation);
-		float diffAngle = (float) Math.toDegrees(diff.angle());
-		
-		int numSteps = (int) Math.ceil(diffAngle / stepFactor);
-		if (numSteps < 1) numSteps = 1;
-		
-		float ticksPerStep = (float) duration / numSteps;
-		int stepDuration = (int) Math.ceil(ticksPerStep);
-		
-		
-		if (ticksPerStep <= 0) {
-			setModelRotationLerp(newRotation, duration, force);
-			return;
-		}
-		
-		for (int i = 0; i < numSteps; i++) {
-			float alpha = (float) (i + 1) / numSteps;
-			int delayTicks = (int) (i * ticksPerStep);
-			
-			Quaternionf nextRotation = new Quaternionf(startRot).slerp(newRotation, alpha);
-			
-			if (delayTicks == 0) {
-				applyRotationToAll(nextRotation, stepDuration);
-	        	continue;
-			}
-			
-			TaskHolder holder = new TaskHolder();
-			holder.task = scheduler().buildTask(() -> {
-				applyRotationToAll(nextRotation, stepDuration);
-	        	ongoingRotations.remove(holder.task);
-			}).delay(TaskSchedule.tick(delayTicks)).schedule();
-			
-			ongoingRotations.add(holder.task);
-		}
-		
-	}
-	
-	private static class TaskHolder {
-		Task task;
-	}
-	
-	private void applyRotationToAll(Quaternionf rot, int dur) {
-	    forEachPassenger(p -> setPassengerRotation(p, rot, dur));
+		behavior.setModelRotationSlerp(newRotation, duration, stepFactor, force);
 	}
 	
 	
@@ -624,126 +495,9 @@ public class BDModelEntity extends BDBaseModelEntity {
 	 * 						
 	 */
 	public void cancelRotationTasks(Quaternionf finalRotation, boolean finish) {
-		if (ongoingRotations.isEmpty()) return;
-		
-		for (Task rotTask : ongoingRotations) {
-			rotTask.cancel();
-		}
-		
-		if (finish) setModelRotationLerp(finalRotation, 0);
-		
-		ongoingRotations.clear();
+		behavior.cancelRotationTasks(finalRotation, finish);
 	}
 	
-
-	
-	
-	/*public void interpolateModelRotation3(Quaternionf newRotation, int duration) {
-//		 1. Policz jaki jest całkowity obrót
-//		 2. podziel ten całkowity obrót w każdej osi przez 22.5
-//		 3. weź największą wartosć z tych 3 wartości
-//		 4. przesuń tak jak powinno być od razu (tylko po stronie serwera)
-//		 5. zrób każdy updatepacket dla każdej fazy obrotu
-//		 6. podziel duration przez tyle ile jest pakietów
-//		 7. wysyał kolejny packet raz na duration 
-		
-		AbstractDisplayMeta rootMeta = (AbstractDisplayMeta) getEntityMeta();
-		
-		Point point = rootMeta.getTranslation();
-		Vec scale = rootMeta.getScale();
-		Vector3f pos = VecUtils.pointToJomlVec3(point);
-		Vector3f center = VecUtils.pointToJomlVec3(scale.div(2));
-		System.out.println("Pos: " + pos);
-		System.out.println("Center: " + center);
-		Vector3f pivotPoint = new Vector3f(pos).add(center);
-		
-		Quaternionf startRot = MatrixUtils.arrayToQuaternion(rootMeta.getLeftRotation());
-		Quaternionf diff = new Quaternionf(startRot).difference(newRotation);
-		
-		float diffAngleRad = diff.angle();
-		float diffAngleDeg = (float) Math.toDegrees(diffAngleRad);
-		
-		System.out.println("Diff  angle: " + diffAngleDeg);		
-		
-		int numSteps = (int) Math.ceil(diffAngleDeg / 22.5f);
-		
-		if (numSteps < 1) numSteps = 1;
-		System.out.println("Num steps: " + numSteps);		
-		
-		float ticksPerStep = (float) duration / numSteps;
-		System.out.println("Tick per step: " + ticksPerStep);		
-		
-		Quaternionf stepRotation = new Quaternionf().slerp(diff, 1.0f / numSteps);
-		System.out.println("Step rotation: " + stepRotation);
-		
-		 if (ticksPerStep <= 0) {
-	       	forEachPassenger((passenger) -> {	        		
-	       		applyRotationStep(passenger, diff, pivotPoint, 0);
-	       	});
-	       	return;
-       }
-				
-		for (int i = 0; i < numSteps; i++) {
-			// 7. Wysyłaj pakiet z opóźnieniem
-			int delayTicks = (int) (i * ticksPerStep);
-
-	        System.out.println("Step " + i + ", delay: " + delayTicks);		
-	        
-	        if (delayTicks == 0) {
-	        	forEachPassenger((passenger) -> {	        		
-	        		applyRotationStep(passenger, stepRotation, pivotPoint, (int) Math.ceil(ticksPerStep));
-	        	});
-	        	continue;
-	        }
-	        
-	        scheduler().buildTask(() -> {
-	            // Tutaj Twoja metoda rotateBy, ale uważaj:
-	            // Musisz przekazać kwaternion RELATYWNY do poprzedniego kroku
-	            // ALBO (lepiej) zmodyfikować rotateBy, by przyjmowała absolutny cel od startu
-	        	forEachPassenger((passenger) -> {	        		
-	        		applyRotationStep(passenger, stepRotation, pivotPoint, (int) Math.ceil(ticksPerStep));
-	        	});
-	        }).delay(TaskSchedule.tick(delayTicks)).schedule();
-	    }
-		
-	}*/
-	
-	
-	private void setPassengerRotation(BDPassengerEntity entity, Quaternionf newRotation, int duration) {
-		Vector3f baseTranslation = VecUtils.pointToJomlVec3(entity.getDefaultTranslation().mul(globalScale).add(globalTranslation));
-		Quaternionf defRotation = entity.getDefaultLeftRotation();
-		
-		applyRotation(
-				entity,
-				baseTranslation, 
-				defRotation, 
-				newRotation, 
-				duration
-			);
-	}
-	
-	private void applyRotation(BDPassengerEntity entity, Vector3f baseTranslation, Quaternionf baseLeftRot, 
-			Quaternionf rotationModifier, int duration) {
-		
-		// rotate translation around pivotPoint
-		Vector3f newTranslation = new Vector3f(baseTranslation)
-	            .sub(pivotPoint)
-	            .rotate(rotationModifier)
-	            .add(pivotPoint);
-		
-		// local rotation
-		Quaternionf newLeftRot = new Quaternionf(rotationModifier)
-	            .mul(baseLeftRot)
-	            .normalize();
-		
-		entity.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
-			meta.setTranslation(VecUtils.vec3ToMinestomVec(newTranslation));
-			meta.setLeftRotation(MatrixUtils.toArray(newLeftRot));
-			
-			meta.setTransformationInterpolationDuration(duration);
-			meta.setTransformationInterpolationStartDelta(0);
-		});
-	}
 	
 	
 	
@@ -757,59 +511,30 @@ public class BDModelEntity extends BDBaseModelEntity {
      * <p>
      * <b>DANGER:</b> This is a raw internal method used primarily for debugging. 
      * It does not update the model's internal state (globalRotation), meaning 
-     * subsequent calls to {@code setRotation()} or {@code rotateModel()} 
-     * will completely override these changes.
+     * subsequent calls to {@code setModelRotationLerp()} or other methods 
+     * manipulating rotation will completely override these changes.
      * </p>
-     * * @deprecated Use {@link #setModelRotation(Quaternionf, int)} for consistent behavior.
+     * @deprecated Use {@link #setModelRotationLerp(Quaternionf, int)} for consistent behavior.
      */
 	@Deprecated
 	public void setLeftRotation(Quaternionf leftQuat, int duration) {
-		forEachPassenger((passenger) -> {
-			passenger.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
-				meta.setLeftRotation(MatrixUtils.toArray(leftQuat));
-				meta.setTransformationInterpolationDuration(duration);
-				meta.setTransformationInterpolationStartDelta(0);
-			});
-		});
+		behavior.setLeftRotation(leftQuat, duration);
 	}
 
 	/**
      * Directly sets the right rotation of all passenger entities.
      * <p>
+     * <p>
      * <b>DANGER:</b> This is a raw internal method used primarily for debugging. 
      * It does not update the model's internal state (globalRotation), meaning 
-     * subsequent calls to {@code setRotation()} or {@code rotateModel()} 
-     * will completely override these changes.
+     * subsequent calls to {@code setModelRotationLerp()} or other methods 
+     * manipulating rotation will completely override these changes.
      * </p>
-     * * @deprecated Use {@link #setModelRotation(Quaternionf, int)} for consistent behavior.
+     * @deprecated Use {@link #setModelRotationLerp(Quaternionf, int)} for consistent behavior.
      */
 	@Deprecated
 	public void setRightRotation(Quaternionf rightQuat, int duration) {
-		forEachPassenger((passenger) -> {
-			passenger.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
-				meta.setRightRotation(MatrixUtils.toArray(rightQuat));
-				meta.setTransformationInterpolationDuration(duration);
-				meta.setTransformationInterpolationStartDelta(0);
-			});
-		});
+		behavior.setRightRotation(rightQuat, duration);
 	}
 	
-	
-	
-	
-	
-	
-	/*
-	 * Private methods
-	 */
-	
-	private void forEachPassenger(Consumer<BDPassengerEntity> action) {
-	    for (Entity entity : getPassengers()) {
-	        if (entity instanceof BDPassengerEntity passenger) {
-	            action.accept(passenger);
-	        } else {
-	        	LOGGER.warn("Unexpected passenger type: {}", entity.getClass().getSimpleName());
-	        }
-	    }
-	}
 }

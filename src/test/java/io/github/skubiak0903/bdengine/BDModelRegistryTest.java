@@ -19,8 +19,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import io.github.skubiak0903.bdengine.entity.BDModelEntity;
 import io.github.skubiak0903.bdengine.entity.BDModelEntitySchema;
+import io.github.skubiak0903.bdengine.entity.BDModelEntity;
 
 public class BDModelRegistryTest {
     private static final String TEST_MODEL_JSON = """
@@ -106,7 +106,7 @@ public class BDModelRegistryTest {
         @Test
         @DisplayName("Should get model by identifier")
         void shouldGetModel() {
-            BDModelEntity model = BDModelRegistry.get("test");
+        	BDModelEntity model = BDModelRegistry.get("test");
             
             assertNotNull(model);
         }
@@ -114,7 +114,7 @@ public class BDModelRegistryTest {
         @Test
         @DisplayName("Should return null for non-existent model")
         void shouldReturnNullForNonExistent() {
-            BDModelEntity model = BDModelRegistry.get("nonexistent");
+        	BDModelEntity model = BDModelRegistry.get("nonexistent");
             
             assertNull(model);
         }

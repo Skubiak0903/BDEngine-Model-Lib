@@ -7,7 +7,6 @@ import org.joml.Quaternionf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.skubiak0903.bdengine.entity.BDModelEntitySchema.DisplayType;
 import io.github.skubiak0903.bdengine.utils.MatrixUtils;
 import lombok.Getter;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
@@ -27,19 +26,19 @@ import net.minestom.server.item.Material;
 import net.minestom.server.network.player.ResolvableProfile;
 
 @Getter
-public class BDPassengerEntity extends BDBaseModelEntity {
-	private static final Logger LOGGER = LoggerFactory.getLogger(BDPassengerEntity.class);
+public class PassengerEntity extends BDBaseModelEntity {
+	private static final Logger LOGGER = LoggerFactory.getLogger(PassengerEntity.class);
 	
 	private final Vec defaultScale;
 	private final Vec defaultTranslation;
 	private final Quaternionf defaultRightRotation;
 	private final Quaternionf defaultLeftRotation;
 		
-	public BDPassengerEntity(EntityType entityType) {
+	public PassengerEntity(EntityType entityType) {
 		this(entityType, Vec.ONE, Vec.ZERO, new Quaternionf(), new Quaternionf());
 	}
 	
-	public BDPassengerEntity(EntityType entityType, Vec defaultScale, Vec defaultTranslation, Quaternionf defaultRightRotation, Quaternionf defaultLeftRotation) {
+	public PassengerEntity(EntityType entityType, Vec defaultScale, Vec defaultTranslation, Quaternionf defaultRightRotation, Quaternionf defaultLeftRotation) {
 		super(entityType);
 		this.defaultScale = defaultScale;
 		this.defaultTranslation = defaultTranslation;
@@ -89,95 +88,100 @@ public class BDPassengerEntity extends BDBaseModelEntity {
 	 *  static
 	 */
 	
-	public static BDPassengerEntity createPassengerEntity(BDModelEntitySchema schema, Vec initialScale, Vec initialTranslation) {
-		EntityType type = displayTypeToEntityType(schema.getType());
+	public static PassengerEntity createPassengerEntity(BDModelEntitySchema schema, Vec initialScale, Vec initialTranslation) {
+		EntityType type = schema.getType().getEntityType();
 		
-		Vec scale       = schema.getScale();
+		Vec scale = schema.getScale();
+		Vec translation = schema.getTranslation();
+		Quaternionf rightRotation = schema.getRotationRight().conjugate(new Quaternionf());
+		Quaternionf leftRotation = schema.getRotationLeft();
+		
+		PassengerEntity entity = new PassengerEntity(type, scale, translation, rightRotation, leftRotation);
+		
+		setupEntity(entity, schema, initialScale, initialTranslation); // manipulates on entity variable
+
+		return entity;		
+	}
+	
+	public static void setupEntity(BDBaseModelEntity entity, BDModelEntitySchema schema, Vec initialScale, Vec initialTranslation) {
+		EntityType type = schema.getType().getEntityType();
+		if (entity.getEntityType() != type) throw new AssertionError("Unexpected entity type! Got " + entity.getEntityType() + ", but expected "  + type);
+
+		Vec scale = schema.getScale();
 		Vec translation = schema.getTranslation();
 		
-		
-		// Very wierd; left rotation is right, and vice versa
-		// also all we are changing signs to all, besides `w` parameter		
 		Quaternionf rightRotation = schema.getRotationRight().conjugate(new Quaternionf());
-		Quaternionf leftRotation  = schema.getRotationLeft();
-		
-		BDPassengerEntity entity = new BDPassengerEntity(type, scale, translation, rightRotation, leftRotation);
-		
+		Quaternionf leftRotation = schema.getRotationLeft();
+
 		entity.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
-			// operating with initial scale, must be done here because defafaultScale and translation must be unaffected by it;
+			// operating with initial scale, must be done here because defafaultScale and
+			// translation must be unaffected by it;
 			meta.setScale(scale.mul(initialScale));
 			meta.setTranslation(translation.mul(initialScale).add(initialTranslation));
 
 			meta.setRightRotation(MatrixUtils.toArray(rightRotation));
-			meta.setLeftRotation (MatrixUtils.toArray(leftRotation));
-			
+			meta.setLeftRotation(MatrixUtils.toArray(leftRotation));
+
 			meta.setBillboardRenderConstraints(BillboardConstraints.FIXED);
 			meta.setBrightness(schema.getBlockLight(), schema.getSkyLight());
-			
+
 			meta.setWidth(schema.getWidth());
 			meta.setHeight(schema.getHeight());
-			
+
 			meta.setPosRotInterpolationDuration(0);
 			meta.setTransformationInterpolationDuration(0);
 			meta.setTransformationInterpolationStartDelta(0);
 		});
-		
+
 		switch (schema.getType()) {
 		case BLOCK: {
 			Block block = getBlockFromState(schema.getDisplayContent(), schema.getHeadTexture());
-			
+
 			entity.editEntityMeta(BlockDisplayMeta.class, (meta) -> {
 				meta.setBlockState(block);
 			});
 			break;
 		}
-		
+
 		case ITEM: {
 			String itemSchema = schema.getDisplayContent();
-			int splitIndex = itemSchema.lastIndexOf('['); // find first '[' and extract: name and properties, from the blockName
-			
+			int splitIndex = itemSchema.lastIndexOf('['); // find first '[' and extract: name and properties, from the
+															// blockName
+
 			String itemName;
 			String propertyString = "";
-						
+
 			if (splitIndex != -1) {
 				itemName = itemSchema.substring(0, splitIndex).trim().toLowerCase();
-				propertyString = itemSchema.substring(splitIndex+1, itemSchema.length() -1).trim(); // remove brackets from start & end
+				propertyString = itemSchema.substring(splitIndex + 1, itemSchema.length() - 1).trim(); // remove
+																										// brackets from
+																										// start & end
 			} else {
 				itemName = itemSchema.trim().toLowerCase();
 			}
-			
-			
+
 			ItemStack item = getItemFromSchema(itemName, schema.getHeadTexture());
-			DisplayContext context = propertyString.isBlank() ? DisplayContext.NONE : extractDisplayContext(propertyString);
-			
+			DisplayContext context = propertyString.isBlank() ? DisplayContext.NONE
+					: extractDisplayContext(propertyString);
+
 			entity.editEntityMeta(ItemDisplayMeta.class, (meta) -> {
 				meta.setItemStack(item);
 				meta.setDisplayContext(context);
 			});
-			
+
 			break;
 		}
-		
+
 		case TEXT: {
 			throw new AssertionError("Unimplemented");
 		}
-		
+
 		default:
 			throw new AssertionError("Unreachable");
 		}
 
-		return entity;		
 	}
-	
-	
-	private static EntityType displayTypeToEntityType(DisplayType type) {
-		return switch(type) {
-			case BLOCK -> EntityType.BLOCK_DISPLAY;
-			case ITEM  -> EntityType.ITEM_DISPLAY;
-			case TEXT  -> EntityType.TEXT_DISPLAY;
-			default -> throw new AssertionError("Unreachable");
-		};
-	}
+
 	
 	private static ItemStack getItemFromSchema(String itemName, String headTexture) {
 		Material mat = Material.fromKey(itemName);

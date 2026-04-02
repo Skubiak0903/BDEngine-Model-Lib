@@ -20,9 +20,9 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
-import io.github.skubiak0903.bdengine.entity.BDModelEntity;
 import io.github.skubiak0903.bdengine.entity.BDModelEntitySchema;
 import io.github.skubiak0903.bdengine.entity.BDModelEntitySchema.DisplayType;
+import io.github.skubiak0903.bdengine.entity.BDModelEntity;
 import io.github.skubiak0903.bdengine.exception.InterpretationException;
 import io.github.skubiak0903.bdengine.node.BDNode;
 import io.github.skubiak0903.bdengine.node.BDNodeAdapter;
@@ -54,7 +54,7 @@ public class BDProjectInterpreter {
 	
 	
 	/**
-	 * Parses BDEngine JSON and creates a {@link BDModelEntity}.
+	 * Parses BDEngine JSON and creates a {@link REMOVE_BDModelEntity}.
 	 * Supports both single project and array of projects, but only first element will be processed.
 	 * 
 	 * @param jsonStr BDEngine model JSON string

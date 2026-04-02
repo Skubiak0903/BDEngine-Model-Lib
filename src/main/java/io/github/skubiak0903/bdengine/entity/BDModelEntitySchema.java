@@ -5,6 +5,7 @@ import org.joml.Quaternionf;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.minestom.server.coordinate.Vec;
+import net.minestom.server.entity.EntityType;
 
 @Getter
 @RequiredArgsConstructor
@@ -25,7 +26,13 @@ public class BDModelEntitySchema {
 	private final String displayContent; // can be block/item/text
 	private final String headTexture;	// can be null
 	
+	@Getter
+	@RequiredArgsConstructor
 	public enum DisplayType {
-		ITEM, BLOCK, TEXT
+		ITEM  (EntityType.ITEM_DISPLAY),
+		BLOCK (EntityType.BLOCK_DISPLAY),
+		TEXT  (EntityType.TEXT_DISPLAY);
+		
+		private final EntityType entityType;
 	}
 }

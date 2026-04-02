@@ -10,8 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.skubiak0903.bdengine.entity.BDModelEntity;
 import io.github.skubiak0903.bdengine.entity.BDModelEntitySchema;
+import io.github.skubiak0903.bdengine.entity.BDModelEntity;
 
 /**
  * Registry for managing BDEngine models.
@@ -30,10 +30,13 @@ public class BDModelRegistry {
      * @param identifier unique model identifier
      * @param jsonStr BDEngine model JSON
      * @throws IllegalArgumentException if identifier or jsonStr is null/empty
+     * 
+     * @return List<BDModelEntitySchema> List of schemas produced by interpreter, that got registered
      */
-	public static void register(String identifier, String jsonStr) {
+	public static List<BDModelEntitySchema> register(String identifier, String jsonStr) {
 		List<BDModelEntitySchema> schema = BDProjectInterpreter.getSchemaFromJson(jsonStr);
 		register(identifier, schema);
+		return schema;
 	}
 	
     /**
