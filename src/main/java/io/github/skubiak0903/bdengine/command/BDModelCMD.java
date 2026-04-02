@@ -6,8 +6,9 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import io.github.skubiak0903.bdengine.BDModelRegistry;
-import io.github.skubiak0903.bdengine.entity.PassengerEntity;
 import io.github.skubiak0903.bdengine.entity.BDModelEntity;
+import io.github.skubiak0903.bdengine.entity.MultiEntityModelBehavior;
+import io.github.skubiak0903.bdengine.entity.PassengerEntity;
 import io.github.skubiak0903.bdengine.utils.VecUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -360,16 +361,20 @@ public class BDModelCMD extends Command {
 		public SetPivotPointSubCommand() {
 			super("set_pivot_point", "<x> <y> <z>");
 			
+			var updateArg = ArgumentType.Boolean("update").setDefaultValue(false);
+			
 			addSyntax((sender, context) -> {
 	        	float x = context.get(X_ARG);
 	        	float y = context.get(Y_ARG);
 	        	float z = context.get(Z_ARG);
-	        		        	
-	        	Component msg = Component.text("Set pivot point to: [%.2f, %.2f, %.2f]".formatted(x, y, z), NamedTextColor.GRAY);
+	        	boolean update = context.get(updateArg);
+	        	
+	        	String updateMsg = update ? ", and refreshed model translation." : "";	        	
+	        	Component msg = Component.text("Set pivot point to: [%.2f, %.2f, %.2f]".formatted(x, y, z) + updateMsg, NamedTextColor.GRAY);
 	        	sender.sendMessage(msg);
 	        	
-	        	lastModelEntity.setPivotPoint(new Vec(x,y,z));
-			}, X_ARG, Y_ARG, Z_ARG);
+	        	lastModelEntity.setPivotPoint(new Vec(x,y,z), update);
+			}, X_ARG, Y_ARG, Z_ARG, updateArg);
 		}
     }
     
@@ -406,7 +411,7 @@ public class BDModelCMD extends Command {
 	        	Pos spawnPos = lastModelEntity.getPosition().add(VecUtils.vec3ToMinestomVec(pivot));
 	        	pivotPassenger.setInstance(lastModelEntity.getInstance(), spawnPos);
 	        	
-	        	lastModelEntity.addPassenger(pivotPassenger);
+	        	if (lastModelEntity.getBehavior() instanceof MultiEntityModelBehavior) lastModelEntity.addPassenger(pivotPassenger);
 	        	
 	        	// schedule removal
 	        	lastModelEntity.scheduler().buildTask(() -> {  // needs to be parent, passengers doesnt tick scheduler

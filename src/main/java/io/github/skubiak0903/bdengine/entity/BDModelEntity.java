@@ -38,7 +38,7 @@ public class BDModelEntity extends BDBaseModelEntity {
 		super(type);
 		
 		this.behavior = schemas.size() > 1 ? 
-				new MutliEntityModelBehavior(this, schemas, initialScale, initialTranslation) :
+				new MultiEntityModelBehavior(this, schemas, initialScale, initialTranslation) :
 				new SingleEntityModelBehavior(this, schemas.get(0), initialScale, initialTranslation);
 	}
 	
@@ -138,24 +138,47 @@ public class BDModelEntity extends BDBaseModelEntity {
 
 	}
 	
-	
-	
-	/**
-	 * WARNING: Doesn't update the model after changing.
-	 * 
-	 * @param newPivotPoint New pivot point vector
-	 */
-	public void setPivotPoint(Vector3f newPivotPoint) {
-		behavior.pivotPoint.set(newPivotPoint);
-	}
+
 
 	/**
-	 * WARNING: Doesn't update the model after changing.
+	 * Changes the model's pivot point, used in model rotation.	 
+	 * <b>WARNING</b>: Doesn't update the model after changing.
 	 * 
 	 * @param newPivotPoint New pivot point vector
 	 */
 	public void setPivotPoint(Vec newPivotPoint) {
 		this.setPivotPoint(VecUtils.pointToJomlVec3(newPivotPoint));
+	}
+	
+	/**
+	 * Changes the model's pivot point, used in model rotation.	 
+	 * <b>WARNING</b>: Doesn't update the model after changing.
+	 * 
+	 * @param newPivotPoint New pivot point vector
+	 */
+	public void setPivotPoint(Vector3f newPivotPoint) {
+		this.setPivotPoint(newPivotPoint, false);
+	}
+	
+	/**
+	 * Changes the model's pivot point, used in model rotation.	 
+	 * 
+	 * @param newPivotPoint New pivot point vector
+	 * @param update 		Updates model positon with correct translation with new pivot point.
+	 */
+	public void setPivotPoint(Vec newPivotPoint, boolean update) {
+		this.setPivotPoint(VecUtils.pointToJomlVec3(newPivotPoint), update);
+	}
+	
+	/**
+	 * Changes the model's pivot point, used in model rotation.	 
+	 * 
+	 * @param newPivotPoint New pivot point vector
+	 * @param update 		Updates model positon with correct translation with new pivot point.
+	 */
+	public void setPivotPoint(Vector3f newPivotPoint, boolean update) {
+		behavior.pivotPoint.set(newPivotPoint);
+		if (update) translateModel(Vec.ZERO, 0, true); // translate by empty vector to update position
 	}
 	
 	

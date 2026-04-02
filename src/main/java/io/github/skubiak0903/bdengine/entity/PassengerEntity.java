@@ -7,6 +7,7 @@ import org.joml.Quaternionf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.github.skubiak0903.bdengine.entity.BDModelEntitySchema.Transformation;
 import io.github.skubiak0903.bdengine.utils.MatrixUtils;
 import lombok.Getter;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
@@ -38,6 +39,10 @@ public class PassengerEntity extends BDBaseModelEntity {
 		this(entityType, Vec.ONE, Vec.ZERO, new Quaternionf(), new Quaternionf());
 	}
 	
+	public PassengerEntity(EntityType entityType, Transformation t) {
+		this(entityType, t.getScale(), t.getTranslation(), t.getRightRotation(), t.getLeftRotation());
+	}
+	
 	public PassengerEntity(EntityType entityType, Vec defaultScale, Vec defaultTranslation, Quaternionf defaultRightRotation, Quaternionf defaultLeftRotation) {
 		super(entityType);
 		this.defaultScale = defaultScale;
@@ -48,6 +53,7 @@ public class PassengerEntity extends BDBaseModelEntity {
 		setAutoViewable(true);
 		setAutoViewEntities(false);
 	}
+	
 	
 	@Override
 	public void tick(long time) {
@@ -91,12 +97,8 @@ public class PassengerEntity extends BDBaseModelEntity {
 	public static PassengerEntity createPassengerEntity(BDModelEntitySchema schema, Vec initialScale, Vec initialTranslation) {
 		EntityType type = schema.getType().getEntityType();
 		
-		Vec scale = schema.getScale();
-		Vec translation = schema.getTranslation();
-		Quaternionf rightRotation = schema.getRotationRight().conjugate(new Quaternionf());
-		Quaternionf leftRotation = schema.getRotationLeft();
-		
-		PassengerEntity entity = new PassengerEntity(type, scale, translation, rightRotation, leftRotation);
+		Transformation transformation = schema.getTransformation();
+		PassengerEntity entity = new PassengerEntity(type, transformation);
 		
 		setupEntity(entity, schema, initialScale, initialTranslation); // manipulates on entity variable
 
@@ -106,21 +108,17 @@ public class PassengerEntity extends BDBaseModelEntity {
 	public static void setupEntity(BDBaseModelEntity entity, BDModelEntitySchema schema, Vec initialScale, Vec initialTranslation) {
 		EntityType type = schema.getType().getEntityType();
 		if (entity.getEntityType() != type) throw new AssertionError("Unexpected entity type! Got " + entity.getEntityType() + ", but expected "  + type);
-
-		Vec scale = schema.getScale();
-		Vec translation = schema.getTranslation();
 		
-		Quaternionf rightRotation = schema.getRotationRight().conjugate(new Quaternionf());
-		Quaternionf leftRotation = schema.getRotationLeft();
+		Transformation transform = schema.getTransformation();
 
 		entity.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
 			// operating with initial scale, must be done here because defafaultScale and
 			// translation must be unaffected by it;
-			meta.setScale(scale.mul(initialScale));
-			meta.setTranslation(translation.mul(initialScale).add(initialTranslation));
+			meta.setScale(transform.getScale().mul(initialScale));
+			meta.setTranslation(transform.getTranslation().mul(initialScale).add(initialTranslation));
 
-			meta.setRightRotation(MatrixUtils.toArray(rightRotation));
-			meta.setLeftRotation(MatrixUtils.toArray(leftRotation));
+			meta.setRightRotation(MatrixUtils.toArray(transform.getRightRotation()));
+			meta.setLeftRotation(MatrixUtils.toArray(transform.getLeftRotation()));
 
 			meta.setBillboardRenderConstraints(BillboardConstraints.FIXED);
 			meta.setBrightness(schema.getBlockLight(), schema.getSkyLight());

@@ -26,6 +26,16 @@ public class BDModelEntitySchema {
 	private final String displayContent; // can be block/item/text
 	private final String headTexture;	// can be null
 	
+	
+	public Transformation getTransformation() {
+		return new Transformation(
+				scale, 
+				translation, 
+				rotationRight.conjugate(new Quaternionf()), 
+				rotationLeft);
+	}
+	
+	
 	@Getter
 	@RequiredArgsConstructor
 	public enum DisplayType {
@@ -34,5 +44,14 @@ public class BDModelEntitySchema {
 		TEXT  (EntityType.TEXT_DISPLAY);
 		
 		private final EntityType entityType;
+	}
+	
+	@Getter
+	@RequiredArgsConstructor
+	public final class Transformation {
+		private final Vec scale;
+		private final Vec translation;
+		private final Quaternionf rightRotation;
+		private final Quaternionf leftRotation;
 	}
 }
