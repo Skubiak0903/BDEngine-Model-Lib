@@ -31,4 +31,8 @@ public class VecUtils {
 	public static boolean isSimilar(Point p1, Point p2, double epsilon) {
 		return p1.distanceSquared(p2) < (epsilon*epsilon);
 	}
+	
+	public static boolean isSimilar(Vector3f p1, Point p2) {
+		return isSimilar(vec3ToMinestomVec(p1), p2, Vec.EPSILON);
+	}
 }

@@ -1,7 +1,7 @@
 package io.github.skubiak0903.bdengine;
 
-import static io.github.skubiak0903.bdengine.utils.QuaternionAssert.assertEquals;
 import static io.github.skubiak0903.bdengine.utils.VecAssert.assertEquals;
+import static io.github.skubiak0903.bdengine.utils.QuaternionAssert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -137,10 +137,10 @@ public class BDProjectInterpreterTest {
             assertEquals(null, schema0.getHeadTexture(), "Head texture should be null");
             assertEquals(1.0f, schema0.getWidth(), "Width should be 1.0f");
             assertEquals(1.0f, schema0.getHeight(), "Height should be 1.0f");
-            assertEquals(new Quaternionf().rotateY((float) Math.toRadians(1)), schema0.getRotationRight(), "Right Rotation should match");
-            assertEquals(new Quaternionf().identity(), schema0.getRotationLeft(), "Left Rotation should match");
-            assertEquals(new Vec(1, 1, 0), schema0.getTranslation(), "Translation should match");
-            assertEquals(new Vec(1, 1, 1), schema0.getScale(), "Scale should match");
+            assertEquals(new Vec(1.0f, 1.0f, 0.0f), schema0.getTransformation().getTranslationAsVec(), "Translation should match");
+            assertEquals(new Quaternionf().rotateY((float) Math.toRadians(-1)), schema0.getTransformation().getLeftRotation(), "Left Rotation should match");
+            assertEquals(new Vec(1.0f, 1.0f, 1.0f), schema0.getTransformation().getScaleAsVec(), "Scale should match");
+            assertEquals(new Quaternionf().identity(), schema0.getTransformation().getRightRotation(), "Right Rotation should match");
             
             BDModelEntitySchema schema1 = schemas.get(1);
             assertNotNull(schema1, "Second Schema should not be null");
@@ -151,10 +151,10 @@ public class BDProjectInterpreterTest {
             assertEquals("", schema1.getHeadTexture(), "Head texture should be null");
             assertEquals(1.0f, schema1.getWidth(), "Width should be 1.0f");
             assertEquals(1.0f, schema1.getHeight(), "Height should be 1.0f");
-            assertEquals(new Quaternionf().identity(), schema1.getRotationRight(), "Right Rotation should match");
-            assertEquals(new Quaternionf().identity(), schema1.getRotationLeft(), "Left Rotation should match");
-            assertEquals(new Vec(0.0625, 0.5, 0.5), schema1.getTranslation(), "Translation should match");
-            assertEquals(new Vec(2.3, 5, 0.5), schema1.getScale(), "Scale should match");
+            assertEquals(new Vec(0.0625f, 0.5f, 0.5f), schema1.getTransformation().getTranslationAsVec(), "Translation should match");
+            assertEquals(new Quaternionf().identity(), schema1.getTransformation().getLeftRotation(), "Left Rotation should match");
+            assertEquals(new Vec(2.3f, 5.0f, 0.5f), schema1.getTransformation().getScaleAsVec(), "Scale should match");
+            assertEquals(new Quaternionf().identity(), schema1.getTransformation().getRightRotation(), "Right Rotation should match");
         }
         
         @Test
@@ -208,10 +208,10 @@ public class BDProjectInterpreterTest {
             assertEquals(null, schema0.getHeadTexture(), "Head texture should be null");
             assertEquals(1.0f, schema0.getWidth(), "Width should be 1.0f");
             assertEquals(1.0f, schema0.getHeight(), "Height should be 1.0f");
-            assertEquals(new Quaternionf().rotateY((float) Math.toRadians(1)), schema0.getRotationRight(), "Right Rotation should match");
-            assertEquals(new Quaternionf().identity(), schema0.getRotationLeft(), "Left Rotation should match");
-            assertEquals(new Vec(1, 1, 0), schema0.getTranslation(), "Translation should match");
-            assertEquals(new Vec(1, 1, 1), schema0.getScale(), "Scale should match");
+            assertEquals(new Vec(1, 1, 0), schema0.getTransformation().getTranslationAsVec(), "Translation should match");
+            assertEquals(new Quaternionf().rotateY((float) Math.toRadians(-1)).normalize(), schema0.getTransformation().getLeftRotation(), "Left Rotation should match");
+            assertEquals(new Vec(1, 1, 1), schema0.getTransformation().getScaleAsVec(), "Scale should match");
+            assertEquals(new Quaternionf().identity(), schema0.getTransformation().getRightRotation(), "Right Rotation should match");
         }
         
         @Test
@@ -267,10 +267,10 @@ public class BDProjectInterpreterTest {
             assertEquals("", schema0.getHeadTexture(), "Head texture should be null");
             assertEquals(1.0f, schema0.getWidth(), "Width should be 1.0f");
             assertEquals(1.0f, schema0.getHeight(), "Height should be 1.0f");
-            assertEquals(new Quaternionf().identity(), schema0.getRotationRight(), "Right Rotation should match");
-            assertEquals(new Quaternionf().identity(), schema0.getRotationLeft(), "Left Rotation should match");
-            assertEquals(new Vec(0.0625, 0.5, 0.5), schema0.getTranslation(), "Translation should match");
-            assertEquals(new Vec(2.3, 5, 0.5), schema0.getScale(), "Scale should match");
+            assertEquals(new Vec(0.0625, 0.5, 0.5), schema0.getTransformation().getTranslationAsVec(), "Translation should match");
+            assertEquals(new Quaternionf().identity(), schema0.getTransformation().getLeftRotation(), "Left Rotation should match");
+            assertEquals(new Vec(2.3, 5, 0.5), schema0.getTransformation().getScaleAsVec(), "Scale should match");
+            assertEquals(new Quaternionf().identity(), schema0.getTransformation().getRightRotation(), "Right Rotation should match");
         }
 	}
 	

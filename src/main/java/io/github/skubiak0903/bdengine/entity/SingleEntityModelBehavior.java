@@ -3,6 +3,7 @@ package io.github.skubiak0903.bdengine.entity;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import io.github.skubiak0903.bdengine.math.Transformation;
 import io.github.skubiak0903.bdengine.utils.VecUtils;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -15,10 +16,7 @@ public class SingleEntityModelBehavior extends ModelBehavior {
 	@Getter(value = AccessLevel.NONE)
 	private final BDBaseModelEntity entity;	
 	
-	private final Vec defaultScale;
-	private final Vec defaultTranslation;
-	private final Quaternionf defaultRightRotation;
-	private final Quaternionf defaultLeftRotation;
+	private final Transformation defTransform;
 
 	
 	
@@ -40,10 +38,7 @@ public class SingleEntityModelBehavior extends ModelBehavior {
 		this.globalTranslation = initialTranslation;
 		this.entity = entity;
 		
-		this.defaultScale = entitySchema.getScale();
-		this.defaultTranslation = entitySchema.getTranslation();
-		this.defaultRightRotation = entitySchema.getRotationRight().conjugate(new Quaternionf());
-		this.defaultLeftRotation = entitySchema.getRotationLeft();
+		this.defTransform = entitySchema.getTransformation();
 	}
 	
 	
@@ -82,7 +77,7 @@ public class SingleEntityModelBehavior extends ModelBehavior {
 		this.globalScale = newScale;
 	    this.globalTransformationDuration = duration; // no need to check if duration is the same
 	    
-        setEntityScale(entity, newScale, defaultScale, defaultTranslation, duration);
+        setEntityScale(entity, newScale, defTransform.getScaleAsVec(), defTransform.getTranslationAsVec(), duration);
 	}
 	
 	
@@ -97,7 +92,7 @@ public class SingleEntityModelBehavior extends ModelBehavior {
 		this.globalTranslation = newTranslation;
 		this.globalTransformationDuration = duration;
 
-        setEntityTranslation(entity, newTranslation, defaultTranslation, duration);
+        setEntityTranslation(entity, newTranslation, defTransform.getTranslationAsVec(), duration);
 	}
 	
 	
@@ -138,13 +133,15 @@ public class SingleEntityModelBehavior extends ModelBehavior {
 	
 	
 	private void setThisEntityRotation(Quaternionf newRotation, int duration) {
-		Vector3f baseTranslation = VecUtils.pointToJomlVec3(defaultTranslation.mul(globalScale).add(globalTranslation));
-		Quaternionf defRotation = defaultLeftRotation;
+		Vector3f baseTranslation = VecUtils.pointToJomlVec3(defTransform.getTranslationAsVec().mul(globalScale).add(globalTranslation));
+		Quaternionf defLeftRot = new Quaternionf(defTransform.getLeftRotation());
+		Quaternionf defRightRot = new Quaternionf(defTransform.getRightRotation());
 		
 		setEntityRotation(
 				entity,
 				baseTranslation, 
-				defRotation, 
+				defLeftRot, 
+				defRightRot,
 				newRotation, 
 				duration
 			);

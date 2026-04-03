@@ -7,9 +7,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,18 +18,15 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
+import io.github.skubiak0903.bdengine.entity.BDModelEntity;
 import io.github.skubiak0903.bdengine.entity.BDModelEntitySchema;
 import io.github.skubiak0903.bdengine.entity.BDModelEntitySchema.DisplayType;
-import io.github.skubiak0903.bdengine.entity.BDModelEntity;
 import io.github.skubiak0903.bdengine.exception.InterpretationException;
+import io.github.skubiak0903.bdengine.math.Transformation;
 import io.github.skubiak0903.bdengine.node.BDNode;
 import io.github.skubiak0903.bdengine.node.BDNodeAdapter;
 import io.github.skubiak0903.bdengine.node.BDObject;
 import io.github.skubiak0903.bdengine.node.BDProject;
-import io.github.skubiak0903.bdengine.utils.MatrixUtils;
-import io.github.skubiak0903.bdengine.utils.VecUtils;
-import io.github.skubiak0903.bdengine.utils.MatrixUtils.SVDDecomposition;
-import net.minestom.server.coordinate.Vec;
 
 /**
  * Interpreter for converting BDEngine JSON into model.
@@ -43,14 +38,6 @@ public class BDProjectInterpreter {
 		    .registerTypeAdapter(BDNode.class, new BDNodeAdapter())
 		    .setStrictness(Strictness.LENIENT) // allow for comments, keys and values without quotes, etc.
 		    .create();
-
-	// no transformation! -> scale is [1,1,1], rotation [0,0,0,1], etc.
-	private static final float[] IDENTITY_MATRIX = {
-	    1, 0, 0, 0,
-	    0, 1, 0, 0,
-	    0, 0, 1, 0,
-	    0, 0, 0, 1
-	};
 	
 	
 	/**
@@ -91,7 +78,7 @@ public class BDProjectInterpreter {
 		// use just first object. Idk how it looks with more project in a file, but the object is contained in array
 		BDProject project = projectList.get(0);
 		
-		return processNode(project, IDENTITY_MATRIX);
+		return processNode(project, Transformation.identity());
 	}
 	
 	
@@ -120,28 +107,24 @@ public class BDProjectInterpreter {
 	}
 	
 	
-	private static List<BDModelEntitySchema> processNode(BDNode node, float[] parentMatrix) {
+	private static List<BDModelEntitySchema> processNode(BDNode node, Transformation parentTransform) {
 		List<BDModelEntitySchema> schemas = new ArrayList<>();
 		
-		float[] currentMatrix;
+		Transformation localTransform = extractTransformation(node.transforms);
+		Transformation currentTransform = parentTransform.compose(localTransform);
 	    
 	    switch (node) {
 		    case BDProject projectNode: {
-			    float[] localTransform = listToFloatArray(projectNode.transforms);
-			    currentMatrix = MatrixUtils.multiply4x4RowMajor(parentMatrix, localTransform);
-			    
 			    // recursive child processing
 		    	for (BDNode child : projectNode.children) {
-		    		var childSchema = processNode(child, currentMatrix);
+		    		var childSchema = processNode(child, currentTransform);
 		    		schemas.addAll(childSchema);
 		    	}
 		    	break;
 		    }
 			case BDObject objectNode: {
-			    float[] localTransform = listToFloatArray(objectNode.transforms);
-			    currentMatrix = MatrixUtils.multiply4x4RowMajor(parentMatrix, localTransform);
 			    
-				var schema = convertObjectToSchema(objectNode, currentMatrix);
+				var schema = convertObjectToSchema(objectNode, currentTransform);
 				if (schema != null) schemas.add(schema);
 				
 				return schemas;
@@ -153,36 +136,7 @@ public class BDProjectInterpreter {
 	    return schemas;
 	}
 	
-	private static BDModelEntitySchema convertObjectToSchema(BDObject node, float[] matrixArray) {
-		if (matrixArray.length != 16) {
-			LOGGER.error("Invalid transformation matrix length: {}, should be 16", matrixArray.length);
-			return null;
-		}
-		
-		Matrix4f matrix = new Matrix4f();
-		matrix.set(matrixArray);
-
-		
-		// Extract Translation
-		float translateX = matrix.m03();
-		float translateY = matrix.m13();
-		float translateZ = matrix.m23();
-		Vec translation = new Vec(translateX, translateY, translateZ);
-		
-
-		// Extract 3x3 matrix (rotation & scale)
- 		Matrix3f m3x3 = new Matrix3f();
-		matrix.get3x3(m3x3);
-		
-        
-        // Decompose 3x3 matrix to leftRotation, scale, rightRotation
-		SVDDecomposition decomposition = MatrixUtils.svdDecompose(m3x3);
-
-		Quaternionf leftRotation  = decomposition.leftRotation();
-		Vec 	 	scale 		  = VecUtils.vec3ToMinestomVec(decomposition.scale());
-		Quaternionf rightRotation = decomposition.rightRotation();		
-		
-		
+	private static BDModelEntitySchema convertObjectToSchema(BDObject node, Transformation transformation) {		
         String nbt = node.nbt != null ? node.nbt : "";
         float width  = Float.valueOf(getNbtValue(nbt, "width", "1.0f"));
         float height = Float.valueOf(getNbtValue(nbt, "height", "1.0f"));
@@ -217,7 +171,7 @@ public class BDProjectInterpreter {
 
         return new BDModelEntitySchema(
         		type, 
-        		scale, translation, leftRotation, rightRotation,
+        		transformation,
         		brightnessBlock, brightnessSky, width, height,
         		node.name, headTexture);
   	}
@@ -243,6 +197,24 @@ public class BDProjectInterpreter {
 	        result[i] = value != null ? value.floatValue() : 0.0f;
 	    }
 	    return result;
+	}
+		
+	private static Transformation extractTransformation(List<Double> list) {
+		if (list == null) 	   throw new AssertionError("Transformation list cannot be null");
+		if (list.size() != 16) throw new AssertionError("Transformation list size must be 16!");
+		
+		float[] rowMajor = listToFloatArray(list);
+//		Matrix4f matrix = new Matrix4f().set(floatMatrix);
+		
+		Matrix4f colMajor = new Matrix4f();
+		
+		for (int row = 0; row < 4; row++) {
+		    for (int col = 0; col < 4; col++) {
+		        colMajor.set(col, row, rowMajor[row * 4 + col]);
+		    }
+		}
+		
+		return new Transformation(colMajor);
 	}
 	
 	

@@ -1,8 +1,6 @@
 package io.github.skubiak0903.bdengine.node;
 
-import java.util.List;
-
-public class BDObject implements BDNode{
+public class BDObject extends BDNode {
 	public boolean isItemDisplay;
 	public boolean isBlockDisplay;
 	public boolean isTextDisplay;
@@ -13,7 +11,6 @@ public class BDObject implements BDNode{
     public TagHead tagHead;
     //public List<?> textureValueList;
     //public ? paintTexture;
-    public List<Double> transforms; // 4x4 Matrix (16 values)
     public String defaultTextureValue;
     
     public static class TagHead {

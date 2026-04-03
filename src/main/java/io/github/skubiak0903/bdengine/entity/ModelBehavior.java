@@ -167,6 +167,10 @@ public abstract class ModelBehavior {
         });
 	}
 	
+	protected void setEntityTranslation(BDBaseModelEntity entity, Vector3f newTranslation, Vector3f defTranslation, int duration) {
+		setEntityTranslation(entity, VecUtils.vec3ToMinestomVec(newTranslation), VecUtils.vec3ToMinestomVec(defTranslation), duration);
+	}
+	
 	protected void setEntityTranslation(BDBaseModelEntity entity, Vec newTranslation, Vec defTranslation, int duration) {
         entity.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
         	Vec baseTranslation = defTranslation.mul(globalScale).add(newTranslation);
@@ -184,7 +188,7 @@ public abstract class ModelBehavior {
         });
 	}
 	
-	protected void setEntityRotation(BDBaseModelEntity entity, Vector3f baseTranslation, Quaternionf baseLeftRot, 
+	protected void setEntityRotation(BDBaseModelEntity entity, Vector3f baseTranslation, Quaternionf baseLeftRot, Quaternionf baseRightRot,
 			Quaternionf rotationModifier, int duration) {
 		
 		// rotate translation around pivotPoint
@@ -198,9 +202,12 @@ public abstract class ModelBehavior {
 	            .mul(baseLeftRot)
 	            .normalize();
 		
+//		Quaternionf newRightRot = new Quaternionf(baseRightRot);
+		
 		entity.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
 			meta.setTranslation(VecUtils.vec3ToMinestomVec(newTranslation));
 			meta.setLeftRotation(MatrixUtils.toArray(newLeftRot));
+//			meta.setRightRotation(MatrixUtils.toArray(newRightRot));
 			
 			meta.setTransformationInterpolationDuration(duration);
 			meta.setTransformationInterpolationStartDelta(0);

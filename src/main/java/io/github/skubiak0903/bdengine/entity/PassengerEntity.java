@@ -7,7 +7,7 @@ import org.joml.Quaternionf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.skubiak0903.bdengine.entity.BDModelEntitySchema.Transformation;
+import io.github.skubiak0903.bdengine.math.Transformation;
 import io.github.skubiak0903.bdengine.utils.MatrixUtils;
 import lombok.Getter;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
@@ -30,25 +30,16 @@ import net.minestom.server.network.player.ResolvableProfile;
 public class PassengerEntity extends BDBaseModelEntity {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PassengerEntity.class);
 	
-	private final Vec defaultScale;
-	private final Vec defaultTranslation;
-	private final Quaternionf defaultRightRotation;
-	private final Quaternionf defaultLeftRotation;
+	private final Transformation defTransform;
 		
 	public PassengerEntity(EntityType entityType) {
-		this(entityType, Vec.ONE, Vec.ZERO, new Quaternionf(), new Quaternionf());
+		this(entityType, Transformation.identity());
 	}
 	
-	public PassengerEntity(EntityType entityType, Transformation t) {
-		this(entityType, t.getScale(), t.getTranslation(), t.getRightRotation(), t.getLeftRotation());
-	}
-	
-	public PassengerEntity(EntityType entityType, Vec defaultScale, Vec defaultTranslation, Quaternionf defaultRightRotation, Quaternionf defaultLeftRotation) {
+	public PassengerEntity(EntityType entityType, Transformation transformation) {
 		super(entityType);
-		this.defaultScale = defaultScale;
-		this.defaultTranslation = defaultTranslation;
-		this.defaultRightRotation = defaultRightRotation;
-		this.defaultLeftRotation = defaultLeftRotation;
+		
+		this.defTransform = transformation;
 		
 		setAutoViewable(true);
 		setAutoViewEntities(false);
@@ -110,15 +101,18 @@ public class PassengerEntity extends BDBaseModelEntity {
 		if (entity.getEntityType() != type) throw new AssertionError("Unexpected entity type! Got " + entity.getEntityType() + ", but expected "  + type);
 		
 		Transformation transform = schema.getTransformation();
+		
+		// operating with initial scale, must be done here because defafaultScale and
+		// translation must be unaffected by it;
+		Vec scale = transform.getScaleAsVec().mul(initialScale);
+		Vec translation = transform.getTranslationAsVec().mul(initialScale).add(initialTranslation);
 
 		entity.editEntityMeta(AbstractDisplayMeta.class, (meta) -> {
-			// operating with initial scale, must be done here because defafaultScale and
-			// translation must be unaffected by it;
-			meta.setScale(transform.getScale().mul(initialScale));
-			meta.setTranslation(transform.getTranslation().mul(initialScale).add(initialTranslation));
+			meta.setScale(scale);
+			meta.setTranslation(translation);
 
-			meta.setRightRotation(MatrixUtils.toArray(transform.getRightRotation()));
-			meta.setLeftRotation(MatrixUtils.toArray(transform.getLeftRotation()));
+			meta.setRightRotation(MatrixUtils.toArray((Quaternionf) transform.getRightRotation()));
+			meta.setLeftRotation( MatrixUtils.toArray((Quaternionf) transform.getLeftRotation()));
 
 			meta.setBillboardRenderConstraints(BillboardConstraints.FIXED);
 			meta.setBrightness(schema.getBlockLight(), schema.getSkyLight());

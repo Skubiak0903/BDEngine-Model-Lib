@@ -127,8 +127,8 @@ public class MultiEntityModelBehavior extends ModelBehavior {
 		this.globalScale = newScale;
 	    this.globalTransformationDuration = duration; // no need to check if duration is the same
 	    forEachPassenger((passenger) -> {
-        	Vec defScale = passenger.getDefaultScale();
-            Vec defTranslation = passenger.getDefaultTranslation();
+        	Vec defScale = passenger.getDefTransform().getScaleAsVec();
+            Vec defTranslation = passenger.getDefTransform().getTranslationAsVec();
             
             setEntityScale(passenger, newScale, defScale, defTranslation, duration);
 	    });
@@ -146,7 +146,7 @@ public class MultiEntityModelBehavior extends ModelBehavior {
 		this.globalTranslation = newTranslation;
 		this.globalTransformationDuration = duration;
 		forEachPassenger((passenger) -> {
-            Vec defTranslation = passenger.getDefaultTranslation();
+            Vec defTranslation = passenger.getDefTransform().getTranslationAsVec();
 
 			setEntityTranslation(passenger, newTranslation, defTranslation, duration);
 	    });
@@ -193,13 +193,15 @@ public class MultiEntityModelBehavior extends ModelBehavior {
 	
 	
 	private void setPassengerRotation(PassengerEntity entity, Quaternionf newRotation, int duration) {
-		Vector3f baseTranslation = VecUtils.pointToJomlVec3(entity.getDefaultTranslation().mul(globalScale).add(globalTranslation));
-		Quaternionf defRotation = entity.getDefaultLeftRotation();
+		Vector3f baseTranslation = VecUtils.pointToJomlVec3(entity.getDefTransform().getTranslationAsVec().mul(globalScale).add(globalTranslation));
+		Quaternionf defLeftRot = new Quaternionf(entity.getDefTransform().getLeftRotation());
+		Quaternionf defRightRot = new Quaternionf(entity.getDefTransform().getRightRotation());
 		
 		setEntityRotation(
 				entity,
 				baseTranslation, 
-				defRotation, 
+				defLeftRot, 
+				defRightRot,
 				newRotation, 
 				duration
 			);

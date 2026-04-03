@@ -2,14 +2,13 @@ package io.github.skubiak0903.bdengine.node;
 
 import java.util.List;
 
-public class BDProject implements BDNode {
+public class BDProject extends BDNode {
 	public boolean isCollection;
 	public boolean isBackCollection;
 	public String name;
 	public String nbt;
 	public BDSettings settings;
 	public String mainNbt;
-	public List<Double> transforms; // default state
 	public List<BDNode> children;
 	public List<BDAnim> listAnim;
 	public List<BDSound> listSound;

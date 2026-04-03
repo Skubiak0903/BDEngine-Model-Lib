@@ -6,9 +6,8 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import io.github.skubiak0903.bdengine.BDModelRegistry;
+import io.github.skubiak0903.bdengine.entity.BDBaseModelEntity;
 import io.github.skubiak0903.bdengine.entity.BDModelEntity;
-import io.github.skubiak0903.bdengine.entity.MultiEntityModelBehavior;
-import io.github.skubiak0903.bdengine.entity.PassengerEntity;
 import io.github.skubiak0903.bdengine.utils.VecUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -22,6 +21,7 @@ import net.minestom.server.command.builder.arguments.number.ArgumentInteger;
 import net.minestom.server.command.builder.suggestion.SuggestionEntry;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
+import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.metadata.display.BlockDisplayMeta;
@@ -32,6 +32,9 @@ public class BDModelCMD extends Command {
 	public static final String COMMAND_NAME = "model";
 	
 	public static BDModelEntity lastModelEntity = null;
+	public static Entity pivotEntity = null;
+	public static float pivotScale = 1;
+	public static long pivotRemoveTime = 0;
 	
 	// shared arguments
 	private static final ArgumentFloat X_ARG = ArgumentType.Float("x");
@@ -156,7 +159,7 @@ public class BDModelCMD extends Command {
 	        	sender.sendMessage(msg);
 	        	
 	        	lastModelEntity.setView(yaw, pitch, duration);
-	        	
+	        	updatePivotPoint(false);
 			}, yawArg, pitchArg, DUR_ARG);
 		}
     }
@@ -175,6 +178,8 @@ public class BDModelCMD extends Command {
 	        	sender.sendMessage(msg);
 	        	
 	        	lastModelEntity.teleport(new Pos(x,y,z), duration);
+	        	
+	        	updatePivotPoint(false);
 			}, X_ARG, Y_ARG, Z_ARG, DUR_ARG);
 		}
     }
@@ -347,7 +352,7 @@ public class BDModelCMD extends Command {
 	        	float z = context.get(zArg);
 	        	int duration = context.get(DUR_ARG);
 	        	
-	        	Quaternionf delta = new Quaternionf().rotationXYZ((float)Math.toRadians(x), (float)Math.toRadians(y), (float)Math.toRadians(z));
+	        	Quaternionf delta = new Quaternionf().rotationXYZ((float)Math.toRadians(x), (float)Math.toRadians(y), (float)Math.toRadians(z)).normalize();
 	        	
 	        	Component msg = Component.text("Set rotation to: [%.2f, %.2f, %.2f]".formatted(x, y, z), NamedTextColor.GRAY);
 	        	sender.sendMessage(msg);
@@ -374,6 +379,8 @@ public class BDModelCMD extends Command {
 	        	sender.sendMessage(msg);
 	        	
 	        	lastModelEntity.setPivotPoint(new Vec(x,y,z), update);
+	        	
+	        	updatePivotPoint(false);
 			}, X_ARG, Y_ARG, Z_ARG, updateArg);
 		}
     }
@@ -391,39 +398,58 @@ public class BDModelCMD extends Command {
 	        	float scale = context.get(scaleArg);
 	        	
 	        	Vector3f pivot = lastModelEntity.getPivotPoint();
-	        		        	
+	        	pivotScale = scale;
+	        	pivotRemoveTime = System.currentTimeMillis() + duration * 20;
+	        	
 	        	Component msg = Component.text("Visualizing pivot point for %d seconds, with scale %.2f".formatted(duration / 20, scale), NamedTextColor.GRAY).appendNewline()
 	        			.append(Component.text("Pivot point location: [%.2f, %.2f, %.2f]".formatted(pivot.x, pivot.y, pivot.z)));
 	        	sender.sendMessage(msg);
 	        	
-	        	Vec scaleVec = new Vec(0.5f * scale);
-	        	Vec translationVec = new Vec(-0.25f * scale).add(pivot.x, pivot.y, pivot.z); // half of a scale
-	        	
-	        	var pivotPassenger = new PassengerEntity(EntityType.BLOCK_DISPLAY, scaleVec, translationVec, new Quaternionf(), new Quaternionf());
-	        	pivotPassenger.editEntityMeta(BlockDisplayMeta.class, (meta) -> {
-	        		meta.setBlockState(Block.BLUE_STAINED_GLASS);
-	        		meta.setHasGlowingEffect(true);
-	        		meta.setGlowColorOverride(0x0000FF); // blue
-	        		meta.setScale(scaleVec);
-	        		meta.setTranslation(translationVec); 
-	        	});
-	        	
-	        	Pos spawnPos = lastModelEntity.getPosition().add(VecUtils.vec3ToMinestomVec(pivot));
-	        	pivotPassenger.setInstance(lastModelEntity.getInstance(), spawnPos);
-	        	
-	        	if (lastModelEntity.getBehavior() instanceof MultiEntityModelBehavior) lastModelEntity.addPassenger(pivotPassenger);
-	        	
-	        	// schedule removal
-	        	lastModelEntity.scheduler().buildTask(() -> {  // needs to be parent, passengers doesnt tick scheduler
-	        		pivotPassenger.acquirable().sync((entity) -> {
-	        			entity.remove();
-	        		});
-	        	}).delay(TaskSchedule.tick(duration)).schedule();
-	        	
+	        	updatePivotPoint(true);
 	        	
 			}, durationArg, scaleArg);
 		}
     }
+	
+	private static void updatePivotPoint(boolean spawn) {
+    	if (pivotEntity == null && !spawn) return;
+		
+		if (pivotEntity != null) {
+    		pivotEntity.remove();
+    	}
+
+    	int leftTicks = (int) ((pivotRemoveTime - System.currentTimeMillis()) / 20);
+    	if (leftTicks <= 0) return;
+    	
+    	Vector3f pivot = lastModelEntity.getPivotPoint();
+    	
+    	Vec scaleVec = new Vec(0.5f * pivotScale);
+    	Vec translationVec = new Vec(-0.25f * pivotScale); // half of a scale
+    	
+    	pivotEntity = new BDBaseModelEntity(EntityType.BLOCK_DISPLAY);
+    	pivotEntity.editEntityMeta(BlockDisplayMeta.class, (meta) -> {
+    		meta.setBlockState(Block.BLUE_STAINED_GLASS);
+    		meta.setHasGlowingEffect(true);
+    		meta.setGlowColorOverride(0x0000FF); // blue
+    		meta.setScale(scaleVec);
+    		meta.setTranslation(translationVec); 
+    	});
+    	
+
+    	
+    	Pos spawnPos = lastModelEntity.getPosition().add(VecUtils.vec3ToMinestomVec(pivot));
+    	pivotEntity.setInstance(lastModelEntity.getInstance(), spawnPos);
+    	
+    	
+    	// schedule removal
+    	pivotEntity.scheduler().buildTask(() -> {  // needs to be parent, passengers doesnt tick scheduler
+    		pivotEntity.acquirable().sync((entity) -> {
+    			entity.remove();
+    		});
+    	}).delay(TaskSchedule.tick(leftTicks)).schedule();
+    	
+    	
+	}
 	
 	private static class GetInfoSubCommand extends ModelSub {
 		public GetInfoSubCommand() {
@@ -436,8 +462,10 @@ public class BDModelCMD extends Command {
 	        	Vec scale = lastModelEntity.getGlobalScale();
 	        	Vec translation = lastModelEntity.getGlobalTranslation();
 	        	Quaternionf rotation = lastModelEntity.getGlobalRotation();
-	        	
-	        	int objCount = lastModelEntity.getPassengers().size();
+	        		        	
+	        	int displayCount = lastModelEntity.getPassengers().size();
+	        	int objCount = displayCount + 1;
+	        	int rootCount = 1;
 	        	
 	        	Component headerPart = Component.text("=-----=", NamedTextColor.DARK_GRAY);
 	        	Component header = headerPart.append(Component.text(" MODEL ENTITY INFO ", NamedTextColor.GOLD)).append(headerPart);
@@ -452,9 +480,9 @@ public class BDModelCMD extends Command {
 	        			.append(Component.text("- Rotation: [%.2f, %.2f, %.2f]".formatted(Math.toDegrees(rotation.x()), Math.toDegrees(rotation.y()), Math.toDegrees(rotation.z())), NamedTextColor.GRAY)).appendNewline()
 	        			.append(Component.text("- Rotation (Quaternion): %s".formatted(rotation.toString()), NamedTextColor.GRAY)).appendNewline()
 	        			.appendNewline()
-	        			.append(Component.text("Object count: %d".formatted(objCount + 1), NamedTextColor.GRAY)).appendNewline()
-	        			.append(Component.text("- root: 1", NamedTextColor.GRAY)).appendNewline()
-	        			.append(Component.text("- displays: %d".formatted(objCount), NamedTextColor.GRAY)).appendNewline()
+	        			.append(Component.text("Object count: %d".formatted(objCount), NamedTextColor.GRAY)).appendNewline()
+	        			.append(Component.text("- root: %d".formatted(rootCount), NamedTextColor.GRAY)).appendNewline()
+	        			.append(Component.text("- displays: %d".formatted(displayCount), NamedTextColor.GRAY)).appendNewline()
 	        			.appendNewline()
 	        			.append(header);
 	        	

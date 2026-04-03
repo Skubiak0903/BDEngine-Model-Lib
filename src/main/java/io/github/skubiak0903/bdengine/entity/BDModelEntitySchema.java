@@ -1,10 +1,8 @@
 package io.github.skubiak0903.bdengine.entity;
 
-import org.joml.Quaternionf;
-
+import io.github.skubiak0903.bdengine.math.Transformation;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.EntityType;
 
 @Getter
@@ -12,10 +10,12 @@ import net.minestom.server.entity.EntityType;
 public class BDModelEntitySchema {
 	private final DisplayType type;
 	
-	private final Vec scale;
-	private final Vec translation;
-	private final Quaternionf rotationRight;
-	private final Quaternionf rotationLeft;
+//	private final Vec scale;
+//	private final Vec translation;
+//	private final Quaternionf rotationRight;
+//	private final Quaternionf rotationLeft;
+	
+	private final Transformation transformation;
 	
 	private final int blockLight;
 	private final int skyLight;
@@ -27,13 +27,13 @@ public class BDModelEntitySchema {
 	private final String headTexture;	// can be null
 	
 	
-	public Transformation getTransformation() {
+	/*public Transformation getTransformation() {
 		return new Transformation(
 				scale, 
 				translation, 
 				rotationRight.conjugate(new Quaternionf()), 
 				rotationLeft);
-	}
+	}*/
 	
 	
 	@Getter
@@ -46,12 +46,12 @@ public class BDModelEntitySchema {
 		private final EntityType entityType;
 	}
 	
-	@Getter
+	/*@Getter
 	@RequiredArgsConstructor
 	public final class Transformation {
 		private final Vec scale;
 		private final Vec translation;
 		private final Quaternionf rightRotation;
 		private final Quaternionf leftRotation;
-	}
+	}*/
 }
