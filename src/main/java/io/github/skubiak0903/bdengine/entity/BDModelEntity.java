@@ -308,7 +308,7 @@ public class BDModelEntity extends BDBaseModelEntity {
      * @param duration	Interpolation duration in ticks.
      */
 	public void translateModel(Vec delta, int duration) {
-	    setModelTranslation(delta, duration, false);
+		translateModel(delta, duration, false);
 	}
 	
 	/**
