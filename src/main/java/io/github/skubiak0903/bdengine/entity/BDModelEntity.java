@@ -50,10 +50,8 @@ public class BDModelEntity extends BDBaseModelEntity {
 	@Override
 	public CompletableFuture<Void> setInstance(Instance instance, Pos spawnPosition) {
 		var future = super.setInstance(instance, spawnPosition);
-		System.out.println("spawned main entity");
 		return future.thenAccept((_) -> {
 			behavior.setInstance(instance, spawnPosition);
-			System.out.println("Set behaviour instance");
 		});
 	}
 	

@@ -271,7 +271,7 @@ public class BDModelCMD extends Command {
 	        	float z = context.get(zArg);
 	        	int duration = context.get(DUR_ARG);
 	        	
-	        	Quaternionf delta = new Quaternionf().rotationXYZ((float)Math.toRadians(x), (float)Math.toRadians(y), (float)Math.toRadians(z));
+	        	Quaternionf delta = new Quaternionf().rotationXYZ((float)Math.toRadians(x), (float)Math.toRadians(y), (float)Math.toRadians(z)).normalize();
 	        	lastModelEntity.rotateModelLerp(delta, duration);
 	        	Vec n = VecUtils.vec3ToMinestomVec(lastModelEntity.getGlobalRotation().getEulerAnglesXYZ(new Vector3f()));
 	        	
@@ -297,7 +297,7 @@ public class BDModelCMD extends Command {
 	        	float z = context.get(zArg);
 	        	int duration = context.get(DUR_ARG);
 	        	
-	        	Quaternionf delta = new Quaternionf().rotationXYZ((float)Math.toRadians(x), (float)Math.toRadians(y), (float)Math.toRadians(z));
+	        	Quaternionf delta = new Quaternionf().rotationXYZ((float)Math.toRadians(x), (float)Math.toRadians(y), (float)Math.toRadians(z)).normalize();;
 	        	
 	        	Component msg = Component.text("Set rotation to: [%.2f, %.2f, %.2f]".formatted(x, y, z), NamedTextColor.GRAY);
 	        	sender.sendMessage(msg);
@@ -321,7 +321,7 @@ public class BDModelCMD extends Command {
 	        	float z = context.get(zArg);
 	        	int duration = context.get(DUR_ARG);
 	        	
-	        	Quaternionf delta = new Quaternionf().rotationXYZ((float)Math.toRadians(x), (float)Math.toRadians(y), (float)Math.toRadians(z));
+	        	Quaternionf delta = new Quaternionf().rotationXYZ((float)Math.toRadians(x), (float)Math.toRadians(y), (float)Math.toRadians(z)).normalize();
 	        	lastModelEntity.rotateModelSlerp(delta, duration);
 	        	Vec n = VecUtils.vec3ToMinestomVec(lastModelEntity.getGlobalRotation().getEulerAnglesXYZ(new Vector3f()));
 	        	
